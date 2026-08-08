@@ -20,7 +20,9 @@
 #      All user-facing messages are English to stay portable.
 #    - Recipes run with bash (SHELL := /bin/bash).
 # =====================================================================
-SHELL       := /bin/bash
+SHELL       := C:/Program Files/Git/bin/bash.exe
+# 注意:Windows 下 ezwinports make 默认用 Git 的 sh(不展开 glob),
+# 必须用完整路径指定 bash,glob 才能正常展开。
 
 # ---------- paths (all targets run at repo root) ----------
 P      := $(CURDIR)
@@ -63,10 +65,14 @@ help:
 	@echo '  make clean    remove build artifacts'
 
 # ---------- figures: run every *_fig.py, then sync to paper ----------
-fig: $(FIG_SCRIPTS)
-	@$(foreach f,$(FIG_SCRIPTS),cd $(CODE) && $(PY) $(f) &&) true
+# 脚本列表写死(Windows 版 make 的 glob/wildcard 在 GBK 编码下有兼容问题,
+# 动态枚举不可靠)。新增画图脚本时在下面加一行即可。
+FIG_SCRIPTS := fig_example.py fig_q1.py fig_sensitivity.py
+
+fig:
+	@cd $(CODE) && for f in $(FIG_SCRIPTS); do echo "  running $$f"; $(PY) src/$$f || exit 1; done
 	@mkdir -p $(PFIGD)
-	@cp -f $(FIGD)/* $(PFIGD)/ 2>/dev/null || true
+	@cp -f $(FIGD)/*.png $(PFIGD)/ 2>/dev/null || true
 	@echo "[fig] figures generated -> $(FIGD), synced to $(PFIGD)"
 
 # ---------- data: remind to download from official site ----------
@@ -75,9 +81,15 @@ data:
 	@echo "and update $(DATA)/README.md with its source."
 	@echo "Data is NOT committed to git (see .gitignore); it is packed into the zip."
 
-# ---------- paper: latexmk (xelatex) ----------
-$(PAPER_PDF): $(wildcard $(PAPER)/*.tex) $(wildcard $(PAPER)/sections/*.tex)
-	cd $(PAPER) && latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex
+# ---------- paper: xelatex 直接编译(不依赖 latexmk/perl) ----------
+# 说明:latexmk 是 perl 脚本,MiKTeX 不附带 perl,部分环境会报
+# "could not find the script engine perl"。我们论文用 thebibliography
+# 手动参考文献(无 bibtex),xelatex 编译两遍即可解析交叉引用与目录。
+# fig 是 .PHONY,保证每次编译前重新生成图(图文件被 gitignore 忽略,
+# 不能依赖文件时间戳判断)。
+$(PAPER_PDF): fig $(wildcard $(PAPER)/*.tex) $(wildcard $(PAPER)/sections/*.tex)
+	cd $(PAPER) && xelatex -interaction=nonstopmode -halt-on-error main.tex
+	cd $(PAPER) && xelatex -interaction=nonstopmode -halt-on-error main.tex
 	@echo "[pdf] paper built -> $(PAPER_PDF)"
 
 pdf: $(PAPER_PDF)
