@@ -1,0 +1,91 @@
+% =====================================================================
+%  数学建模竞赛论文 — 主文件
+%  编译方式:make pdf (latexmk -xelatex)
+%  章节内容按节拆分在 sections/ 下,队员同时写不同文件避免冲突
+%  图片统一放 figures/,由 code/src/*_fig.py 生成
+% =====================================================================
+\documentclass[12pt]{article}
+
+\usepackage{geometry}
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm}
+
+% ---------- 中文环境 ----------
+\usepackage{iftex}
+\ifXeTeX
+  \usepackage{fontspec}
+  % 优先使用国赛要求的字体(标题黑体、正文宋体)。
+  % 检测 Windows 系统字体目录里是否有 SimSun:
+  %   有 -> 手动指定中文字体;没有(如 Linux 队友机器) -> 回退 Fandol 开源字体。
+  % 用 \IfFileExists 而不是 \ifFontExistsTF,兼容老版本 fontspec(MiKTeX 旧版)。
+  \IfFileExists{C:/Windows/Fonts/simsun.ttc}
+    {\usepackage[fontset=none]{ctex}
+     \setCJKmainfont{SimSun}[AutoFakeBold=true]
+     \setCJKsansfont{SimHei}}
+    {\usepackage[fontset=fandol]{ctex}} % Fandol 是 TeX Live/MiKTeX 自带的开源中文字体
+\else
+  \usepackage[UTF8]{ctex}
+\fi
+
+% ---------- 图表 ----------
+\usepackage{graphicx}
+\usepackage{booktabs}    % 三线表
+\usepackage{caption}     % 图表标题
+\captionsetup{font=small, labelfont=bf}
+\usepackage{float}
+\usepackage{subcaption}
+
+% ---------- 数学 ----------
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\numberwithin{equation}{section}
+
+% ---------- 代码 ----------
+\usepackage{listings}
+\usepackage{xcolor}
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!8},
+  columns=flexible
+}
+
+% ---------- 超链接 ----------
+\usepackage[hidelinks]{hyperref}
+% 参考文献采用 thebibliography 手动编号方案(国赛最稳妥,不依赖外部工具),
+% 条目写在 sections/08-references.tex 中。
+
+% ---------- 论文信息 ----------
+\title{题目名称\\ \large 摘要:一句话概括工作}
+\author{
+  队员一 \quad 队员二 \quad 队员三\\
+  \small(学校名称 学院名称,省份 城市 邮编)
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% ========== 摘要 ==========
+\begin{abstract}
+  针对问题一,建立了\ldots模型,采用\ldots算法求解,得到\ldots结论。
+  针对问题二,\ldots。
+  针对问题三,\ldots。
+
+  \textbf{关键词:}关键词一;关键词二;关键词三;关键词四
+\end{abstract}
+
+\tableofcontents
+
+% ========== 正文各节 ==========
+\input{sections/01-problem}
+\input{sections/02-assumptions}
+\input{sections/03-model-analysis}
+\input{sections/04-models}
+\input{sections/05-solution}
+\input{sections/06-sensitivity}
+\input{sections/07-evaluation}
+\input{sections/08-references}
+
+\end{document}
