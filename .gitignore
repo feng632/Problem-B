@@ -54,3 +54,6 @@ Thumbs.db
 *.h5
 *.pt
 *.onnx
+
+# Claude Code 个人配置(不提交)
+.claude/

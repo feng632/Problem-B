@@ -1,82 +1,46 @@
 % =====================================================================
-%  数学建模竞赛论文 — 主文件
-%  编译方式:make pdf (latexmk -xelatex)
+%  数学建模竞赛论文 — 主文件(基于国赛 cumcmthesis 官方模板 v2.8)
+%
+%  编译方式:make pdf (latexmk -xelatex,勿用 pdflatex)
 %  章节内容按节拆分在 sections/ 下,队员同时写不同文件避免冲突
 %  图片统一放 figures/,由 code/src/*_fig.py 生成
+%
+%  团队信息填在下方对应字段,勿改模板其他结构
 % =====================================================================
-\documentclass[12pt]{article}
+\documentclass[withoutpreface,bwprint]{cumcmthesis} % 电子版:去掉封面与编号页
 
-\usepackage{geometry}
-\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.8cm, right=2.8cm}
+\usepackage[most]{tcolorbox} % 提示框(模板示例用)
+\usepackage{url}             % 网页链接
+\usepackage{subcaption}      % 子图
 
-% ---------- 中文环境 ----------
-\usepackage{iftex}
-\ifXeTeX
-  \usepackage{fontspec}
-  % 优先使用国赛要求的字体(标题黑体、正文宋体)。
-  % 检测 Windows 系统字体目录里是否有 SimSun:
-  %   有 -> 手动指定中文字体;没有(如 Linux 队友机器) -> 回退 Fandol 开源字体。
-  % 用 \IfFileExists 而不是 \ifFontExistsTF,兼容老版本 fontspec(MiKTeX 旧版)。
-  \IfFileExists{C:/Windows/Fonts/simsun.ttc}
-    {\usepackage[fontset=none]{ctex}
-     \setCJKmainfont{SimSun}[AutoFakeBold=true]
-     \setCJKsansfont{SimHei}}
-    {\usepackage[fontset=fandol]{ctex}} % Fandol 是 TeX Live/MiKTeX 自带的开源中文字体
-\else
-  \usepackage[UTF8]{ctex}
-\fi
-
-% ---------- 图表 ----------
-\usepackage{graphicx}
-\usepackage{booktabs}    % 三线表
-\usepackage{caption}     % 图表标题
-\captionsetup{font=small, labelfont=bf}
-\usepackage{float}
-\usepackage{subcaption}
-
-% ---------- 数学 ----------
-\usepackage{amsmath, amssymb, amsthm}
-\usepackage{bm}
-\numberwithin{equation}{section}
-
-% ---------- 代码 ----------
-\usepackage{listings}
-\usepackage{xcolor}
-\lstset{
-  basicstyle=\small\ttfamily,
-  breaklines=true,
-  frame=single,
-  backgroundcolor=\color{gray!8},
-  columns=flexible
-}
-
-% ---------- 超链接 ----------
-\usepackage[hidelinks]{hyperref}
-% 参考文献采用 thebibliography 手动编号方案(国赛最稳妥,不依赖外部工具),
-% 条目写在 sections/08-references.tex 中。
-
-% ---------- 论文信息 ----------
-\title{题目名称\\ \large 摘要:一句话概括工作}
-\author{
-  队员一 \quad 队员二 \quad 队员三\\
-  \small(学校名称 学院名称,省份 城市 邮编)
-}
-\date{\today}
+% ---------- 论文信息(比赛开始后填写) ----------
+\title{高性能芯片热管理系统优化}      % 论文题目
+\tihao{B}                            % 题号 A/B/C/D/E/F
+\baominghao{000000}                  % 报名号(从官网获取)
+\schoolname{学校名称}
+\membera{队员一}
+\memberb{队员二}
+\memberc{队员三}
+\supervisor{指导老师}                % 无指导老师可留空
+\yearinput{2026}
+\monthinput{08}
+\dayinput{08}
 
 \begin{document}
 
 \maketitle
 
-% ========== 摘要 ==========
 \begin{abstract}
-  针对问题一,建立了\ldots模型,采用\ldots算法求解,得到\ldots结论。
-  针对问题二,\ldots。
-  针对问题三,\ldots。
+% 摘要:一段总起 + 每问一段 + 关键词
+问题一:……。
+问题二:……。
+问题三:……。
 
-  \textbf{关键词:}关键词一;关键词二;关键词三;关键词四
+\keywords{针肋宽度比;歧管深高比;代理模型;多目标优化;鲁棒设计}
 \end{abstract}
 
-\tableofcontents
+% 目录(电子版可不打印,如需要取消注释):
+% \tableofcontents
 
 % ========== 正文各节 ==========
 \input{sections/01-problem}
@@ -87,5 +51,10 @@
 \input{sections/06-sensitivity}
 \input{sections/07-evaluation}
 \input{sections/08-references}
+
+\newpage
+\begin{appendices}
+\input{sections/09-appendix}
+\end{appendices}
 
 \end{document}

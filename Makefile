@@ -34,7 +34,8 @@ DATA   := $(P)/data
 SUBM   := $(P)/submission
 
 # ---------- tools ----------
-PY           = python
+# Windows 下 python 命令可能是商店占位符(WindowsApps),用 py -3 启动真实解释器
+PY           = py -3
 PDF2PNG      = gs -dNOPAUSE -dBATCH -sDEVICE=png16m -r300 -sOutputFile=$@ $<
 
 # ---------- LaTeX intermediate artifacts (removed by clean) ----------
@@ -107,6 +108,9 @@ $(SUBM)/main.md5: $(PAPER_PDF)
 pack: $(SUBM)/main.zip $(SUBM)/main.md5
 
 md5: $(SUBM)/main.md5
+
+# ---------- all: 一条龙 ----------
+all: fig pdf pack
 
 # ---------- misc ----------
 files:
