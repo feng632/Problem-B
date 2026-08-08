@@ -1,0 +1,11 @@
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+matplotlib>=3.7
+
+# 按需安装(用哪个装哪个,不要一次性全装上):
+# openpyxl          # 读取 .xlsx
+# scikit-learn      # 机器学习模型
+# statsmodels       # 统计分析
+# pulp / ortools    # 线性规划/优化求解
+# networkx          # 图论与网络流
