@@ -43,8 +43,14 @@
 
 仓库的文件严格按角色划分,每个人只碰自己负责的文件,git 冲突就几乎不会发生:
 
+> 论文模板:国赛官方 cumcmthesis 模板已合入 `paper/`(main.tex + cumcmthesis.cls),
+> 分节结构保持不变。模板上传到 `templates/` 的 example.tex 仅作参考,正式编译以 paper/ 为准。
+> 团队信息(报名号/学校/队员名)在 `paper/main.tex` 中填写。
+
 | 文件/目录 | 负责角色 | 说明 |
 |-----------|----------|------|
+| `paper/main.tex` | **只有论文手能改** | 结构、摘要、格式、团队信息(报名号/学校/队员名) |
+| `paper/cumcmthesis.cls` | 论文手(只读) | 国赛官方模板,一般不动 |
 | `paper/sections/01-problem.tex` | 论文手 | 问题重述 |
 | `paper/sections/02-assumptions.tex` | 建模手 | 模型假设 + 符号说明 |
 | `paper/sections/03-model-analysis.tex` | 建模手 | 问题分析 |
@@ -53,7 +59,7 @@
 | `paper/sections/06-sensitivity.tex` | 建模手 | 灵敏度分析 |
 | `paper/sections/07-evaluation.tex` | 建模手 | 模型推广 |
 | `paper/sections/08-references.tex` | 论文手 | 参考文献 |
-| `paper/main.tex` | **只有论文手能改** | 结构、摘要、格式 |
+| `paper/sections/09-appendix.tex` | 论文手 | 附录(代码/补充数据) |
 | `paper/figures/` | **代码手生成,论文手引用** | 图文件 |
 | `code/src/*.py` | 代码手 | 全部代码 |
 | `code/data/` | 代码手 | 数据 |
