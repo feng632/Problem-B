@@ -302,3 +302,167 @@ $D(\mathbf{X})$:
   整数排,对连续最优解中的 $x_3$ 进行离散整数约束网格搜索,二次微调
   $x_1$、$x_2$,锁定工程可行的最优组合。
 \end{enumerate}
+
+\subsection{问题四:权重敏感性分析与鲁棒设计}
+
+\subsubsection{指标权重敏感性分析模型}
+
+\textbf{(1) 场景偏好权重单纯形定义。}设无量纲化后的性能指标矢量为
+$\mathbf{\tilde{F}}(\mathbf{X}) = [\tilde{f}_1(\mathbf{X}),\
+\tilde{f}_2(\mathbf{X}),\ \tilde{f}_3(\mathbf{X})]^T$,分别代表无量纲
+热阻、压降与温度非均匀性。引入描述应用场景偏好的权重矢量
+$\mathbf{W} = [w_1, w_2, w_3]^T$,定义全场景偏好空间为二维标准单纯形
+$\boldsymbol{\Delta}^2$(即 $\mathbb{R}^3$ 中的 2 维标准单纯形,几何上
+为权重空间中的三角形区域):
+\begin{equation}
+  \boldsymbol{\Delta}^2 = \left\{ \mathbf{W} \in \mathbb{R}^3
+  \;\middle\vert\; w_1 + w_2 + w_3 = 1, \quad w_j \ge 0, \;
+  \forall j \in \{1,2,3\} \right\},
+  \label{eq:weight-simplex}
+\end{equation}
+
+为直观刻画不同应用场景的偏好差异,选取三类典型场景,其权重组合
+(分别对应热阻、压降、温度非均匀性)如表~\ref{tab:scenarios} 所示:
+
+\begin{table}[htbp]
+\centering
+\caption{典型应用场景及其权重组合}
+\label{tab:scenarios}
+\begin{tabular}{llc}
+\toprule
+应用场景 & 特征描述 & 权重 $(w_1, w_2, w_3)$ \\
+\midrule
+高性能计算 & 重散热能力,允许较高泵功与温差 & $(0.6, 0.2, 0.2)$ \\
+便携/低功耗设备 & 重泵功与能耗,散热压力相对较低 & $(0.2, 0.6, 0.2)$ \\
+高可靠工业器件 & 重温度均匀性,关注长期可靠性 & $(0.2, 0.2, 0.6)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{(2) 加权目标优化模型。}对于任意给定的场景偏好
+$\mathbf{W} \in \boldsymbol{\Delta}^2$,建立加权理想点范数目标函数:
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \quad
+  D_{\mathbf{W}}(\mathbf{X}) = \sqrt{ \sum_{j=1}^{3} w_j \cdot
+  \left[ \tilde{f}_j(\mathbf{X}) \right]^2 },
+  \label{eq:weighted-objective}
+\end{equation}
+\begin{equation}
+  \text{s.t.} \quad \begin{cases}
+    0.00 \le x_1 \le 0.30 \
+    3.00 \le x_2 \le 4.50 \
+    0 \le x_3 \le 10, \quad x_3 \in \mathbb{Z}^+
+  \end{cases}
+  \label{eq:q4-constraints}
+\end{equation}
+
+\textbf{(3) 敏感性映射与偏好漂移方程。}偏好变化对最优解的影响可通过隐式
+映射关系表达:
+\begin{equation}
+  \mathbf{X}^*(\mathbf{W}) = \arg \min_{\mathbf{X} \in
+  \boldsymbol{\Omega}_{\mathbf{X}}} D_{\mathbf{W}}(\mathbf{X}),
+  \label{eq:preference-map}
+\end{equation}
+通过求解偏好空间 $\boldsymbol{\Delta}^2$ 顶点极值点(极端场景)及内部
+均匀网格点处的 $\mathbf{X}^*(\mathbf{W})$,计算决策变量关于权重的梯度
+敏感性矩阵 $\mathbf{S}_{\mathbf{X},\mathbf{W}}$,用以定量评估参数敏感度:
+\begin{equation}
+  \mathbf{S}_{\mathbf{X},\mathbf{W}} = \begin{bmatrix}
+    \frac{\partial x_1}{\partial w_1} & \frac{\partial x_1}{\partial w_2}
+      & \frac{\partial x_1}{\partial w_3} \\
+    \frac{\partial x_2}{\partial w_1} & \frac{\partial x_2}{\partial w_2}
+      & \frac{\partial x_2}{\partial w_3} \\
+    \frac{\partial x_3}{\partial w_1} & \frac{\partial x_3}{\partial w_2}
+      & \frac{\partial x_3}{\partial w_3}
+  \end{bmatrix}.
+  \label{eq:sensitivity-matrix}
+\end{equation}
+需要说明的是,式~\eqref{eq:sensitivity-matrix} 中的偏导数建立在
+$\mathbf{X}^*(\mathbf{W})$ 关于 $\mathbf{W}$ 分段光滑的假设之上。
+由于最优解在 Pareto 前沿拐点处可能随权重变化发生跳变,本文在各采样点处
+采用中心有限差分 $\frac{\partial x_i}{\partial w_j} \approx
+\frac{x_i^*(\mathbf{W} + h\mathbf{e}_j) - x_i^*(\mathbf{W} -
+h\mathbf{e}_j)}{2h}$ 进行数值近似($h$ 为步长,$\mathbf{e}_j$ 为第
+$j$ 个坐标方向的单位向量),并在跳变点附近加密采样以刻画不连续特征。
+
+\subsubsection{鲁棒设计优化模型(Minimax Regret 模型)}
+
+\textbf{(1) 后悔值函数定义。}定义结构设计方案 $\mathbf{X}$ 在权重场景
+$\mathbf{W}$ 下的后悔值 $R(\mathbf{X}, \mathbf{W})$:即该方案在此场景
+下的实际评价值,与该场景下理论所能达到的最小(最优)评价值之差:
+\begin{equation}
+  R(\mathbf{X}, \mathbf{W}) = D_{\mathbf{W}}(\mathbf{X}) -
+  D_{\mathbf{W}}\left( \mathbf{X}^*(\mathbf{W}) \right),
+  \label{eq:regret}
+\end{equation}
+其物理含义为:$R(\mathbf{X}, \mathbf{W})$ 越大,说明方案 $\mathbf{X}$
+在偏好 $\mathbf{W}$ 下相对于"定制最优方案"的性能劣化越严重。
+
+\textbf{(2) 最小最大后悔值鲁棒优化。}鲁棒设计的核心思想是寻找一个能够
+兜底最坏情况的方案,使得在全偏好空间 $\boldsymbol{\Delta}^2$ 内的最大
+后悔值达到极小化:
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \;
+  \max_{\mathbf{W} \in \boldsymbol{\Delta}^2} \;
+  R(\mathbf{X}, \mathbf{W}),
+  \label{eq:minimax}
+\end{equation}
+展开写为双层极值优化问题(Bi-level Optimization Problem):
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \left[
+  \max_{\mathbf{W} \in \boldsymbol{\Delta}^2} \left(
+  \sqrt{\sum_{j=1}^3 w_j \left[\tilde{f}_j(\mathbf{X})\right]^2} -
+  \min_{\mathbf{X}' \in \boldsymbol{\Omega}_{\mathbf{X}}}
+  \sqrt{\sum_{j=1}^3 w_j \left[\tilde{f}_j(\mathbf{X}')\right]^2}
+  \right) \right],
+  \label{eq:bi-level}
+\end{equation}
+式~\eqref{eq:bi-level} 的求解采用"外层枚举 + 内层采样"的数值策略:
+\begin{enumerate}
+  \item 对决策空间 $\boldsymbol{\Omega}_{\mathbf{X}}$ 中的候选方案
+  $\mathbf{X}$(由问题三的 Pareto 前沿解集与网格候选点组成)逐一考察;
+  \item 对每个候选方案,在权重单纯形 $\boldsymbol{\Delta}^2$ 上
+  均匀采样 $N_W$ 个权重点(含顶点极端场景),对每个采样点求解内层最优值
+  $D_{\mathbf{W}}(\mathbf{X}^*(\mathbf{W}))$(可调用问题二代理模型快速
+  评估),取后悔值最大值作为该方案的最大后悔值;
+  \item 比较所有候选方案的最大后悔值,取极小者即鲁棒解
+  $\mathbf{X}_{robust}$。
+\end{enumerate}
+由于代理模型评估成本极低,该策略可在有限时间内完成全局搜索,且不受
+决策空间维度增大的明显影响。
+
+\textbf{(3) 方案稳定性评估指标。}引入综合性能变异系数(CV)与最大后悔
+界限(Upper Regret Bound)评估方案的稳定性:
+\begin{equation}
+  CV(\mathbf{X}) = \frac{\sigma_{\mathbf{W}}\left(
+  D_{\mathbf{W}}(\mathbf{X}) \right)}
+  {\mu_{\mathbf{W}}\left( D_{\mathbf{W}}(\mathbf{X}) \right)},
+  \label{eq:cv}
+\end{equation}
+式中 $\mu_{\mathbf{W}}$ 与 $\sigma_{\mathbf{W}}$ 分别为目标值在全偏好
+空间上的期望与标准差。$CV(\mathbf{X})$ 越小,说明该方案对场景偏好波动
+的免疫能力越强。
+
+\subsubsection{鲁棒方案的判定依据与理论优势}
+
+\textbf{(1) 判定依据。}
+\begin{itemize}
+  \item \textbf{风险下界保障(Minimax 准则)}:鲁棒解
+  $\mathbf{X}_{robust}$ 满足最大后悔值 $R_{max} \le \epsilon$
+  ($\epsilon$ 为容许上限),确保在极端偏好下不会出现性能崩溃;
+  \item \textbf{变异平坦度(Robustness Flatness)}:在单纯形
+  $\boldsymbol{\Delta}^2$ 内,目标响应面的梯度模长
+  $\Vert \nabla_{\mathbf{W}} D_{\mathbf{W}}(\mathbf{X}) \Vert$
+  趋近于最小值,说明函数值在权重维度上极度平缓。
+\end{itemize}
+
+\textbf{(2) 理论优势。}
+\begin{itemize}
+  \item \textbf{免除偏好主观依赖}:传统多目标优化极度依赖人工给定的
+  权重,而本模型不假设任何先验偏好分布,能适应未知的应用场景变化;
+  \item \textbf{锁定工程制造通用性}:芯片封装开模成本高昂,鲁棒方案
+  提供了一套标准化、通用的结构尺寸参数,大幅降低了异构场景下的多规格
+  开模与库存成本;
+  \item \textbf{综合性能抗漂移}:有效卡住了热阻、压降与温度非均匀性的
+  极值下限,兼顾了高效散热与低泵功运行的平衡。
+\end{itemize}
