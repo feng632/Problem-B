@@ -466,3 +466,180 @@ $\mathbf{W}$ 下的后悔值 $R(\mathbf{X}, \mathbf{W})$:即该方案在此场�
   \item \textbf{综合性能抗漂移}:有效卡住了热阻、压降与温度非均匀性的
   极值下限,兼顾了高效散热与低泵功运行的平衡。
 \end{itemize}
+
+\subsection{问题五:参数扰动敏感性与稳定性分析}
+
+\subsubsection{参数小范围扰动模型}
+
+\textbf{(1) 摄动变量概率分布表征。}在实际微纳加工制造与工程运行中,系统
+不可避免地受到两类物理扰动:
+
+\begin{itemize}
+  \item \textbf{加工制造误差(静态扰动)}:由于光刻、蚀刻及封装工艺精度
+  限制,导致针肋宽度比 $x_1$、歧管深高比 $x_2$ 及针肋排数 $x_3$ 存在
+  尺寸偏差;
+  \item \textbf{运行工况波动(动态扰动)}:系统在实际工作中受到入口质量
+  流量 $\dot{m}$(基准 $1$~g/s)、入口温度 $T_{in}$(基准 $293$~K)以及
+  芯片发热功率 $q_v$(基准 $5\times10^9$~W/m$^3$)的随机漂移。
+\end{itemize}
+
+定义系统综合摄动向量 $\mathbf{Z} = [\mathbf{X}, \mathbf{P}]^T \in
+\mathbb{R}^6$,其中结构参数矢量 $\mathbf{X} = [x_1, x_2, x_3]^T$
+(加工误差),工况参数矢量 $\mathbf{P} = [\dot{m}, T_{in}, q_v]^T$
+(环境与负载波动)。假设各扰动变量在标称设计点
+$\mathbf{Z}_0 = [\mathbf{X}_0, \mathbf{P}_0]^T$ 附近服从独立正态分布
+$\mathcal{N}(\mu, \sigma^2)$ 或有界均匀分布 $\mathcal{U}[-\delta,
++\delta]$:
+\begin{equation}
+  \mathbf{Z} = \mathbf{Z}_0 + \boldsymbol{\delta}_{\mathbf{Z}}, \quad
+  \boldsymbol{\delta}_{\mathbf{Z}} \sim \mathcal{N}\left(\mathbf{0},
+  \boldsymbol{\Sigma}_{\mathbf{Z}}\right),
+  \label{eq:perturb}
+\end{equation}
+其中协方差矩阵为对角阵
+$\boldsymbol{\Sigma}_{\mathbf{Z}} = \text{diag}(\sigma_{x_1}^2,\
+\sigma_{x_2}^2,\ \sigma_{x_3}^2,\ \sigma_{\dot{m}}^2,\
+\sigma_{T_{in}}^2,\ \sigma_{q_v}^2)$。根据工程加工精度与控制要求,设定
+相对扰动幅度 $\pm \varepsilon$。参考半导体封装工艺的典型公差水平
+(光刻线宽误差 $\pm 1\%\sim3\%$、蚀刻深度误差 $\pm 3\%\sim5\%$)以及
+运行控制精度,本文取 $\varepsilon = 5\%$ 作为综合扰动的保守上界进行
+评估。
+
+\textbf{(2) 扩展高斯过程响应曲面。}将问题二中的高斯过程代理模型扩展为
+包含结构与工况的响应映射函数:
+\begin{equation}
+  y_j = G_j(\mathbf{Z}) = G_j(\mathbf{X}, \mathbf{P}), \quad
+  j \in \{1, 2, 3\},
+  \label{eq:gpr-extended}
+\end{equation}
+式中 $y_1, y_2, y_3$ 分别对应无量纲热阻、压降和温度非均匀性。需要说明
+的是,附件 2 的样本数据在固定标称工况下采集,工况参数本身不参与训练;
+本问通过以下方式实现工况维度扩展:将结构参数与工况参数统一按标称值做
+相对偏差归一化($z_i \to z_i/z_{i,0}$),并以标称工况处的代理模型梯度
+(由式~\eqref{eq:lsa} 的有限差分近似)线性外推工况扰动的影响,从而在
+小扰动范围内($\pm 5\%$)保持足够的近似精度。该处理与"小范围扰动"的
+问题设定一致,扰动幅度越大,线性近似的误差随之增大,本文评估以
+$\varepsilon \le 5\%$ 为适用范围。
+
+\subsubsection{性能指标敏感性分析模型}
+
+为区分哪些参数的微小变化对散热性能影响最剧烈,分别建立局部敏感性模型
+与全局敏感性模型。
+
+\textbf{(1) 局部归一化敏感性系数(LSA/NSC)。}在标称设计点
+$\mathbf{Z}_0$ 处对性能指标 $y_j$ 进行一阶泰勒展开,定义第 $i$ 个输入
+参数对第 $j$ 个性能指标的无量纲局部敏感性系数 $S_{ij}^{local}$:
+\begin{equation}
+  S_{ij}^{local} = \left. \frac{\partial G_j(\mathbf{Z})}{\partial z_i}
+  \right\vert_{\mathbf{Z}=\mathbf{Z}_0} \cdot \frac{z_{i,0}}{y_{j,0}},
+  \label{eq:lsa}
+\end{equation}
+$S_{ij}^{local} > 0$ 表示正相关(参数增大导致指标上升);
+$\vert S_{ij}^{local} \vert$ 模长越大,说明该指标对该参数的一阶局部
+扰动越敏感。
+
+\textbf{(2) 基于方差分解的 Sobol 全局敏感性分析(GSA)。}考虑高阶非线性
+交叉耦合作用,将总方差 $V(y_j)$ 分解为单参数方差与多参数交互方差:
+\begin{equation}
+  V(y_j) = \sum_{i=1}^{k} V_i^j + \sum_{1 \le i < m \le k} V_{im}^j
+  + \dots + V_{1,2,\dots,k}^j,
+  \label{eq:sobol-decomp}
+\end{equation}
+定义一阶主效应指数 $S_i^j$(衡量单一参数 $z_i$ 的独立贡献率)与总效应
+指数 $S_{Ti}^j$(衡量参数 $z_i$ 及其与其它所有参数联合交互的总贡献率):
+\begin{equation}
+  S_i^j = \frac{V_{z_i}\left( \mathbb{E}_{\mathbf{Z}_{-i}}[y_j \mid z_i]
+  \right)}{V(y_j)},
+  \label{eq:sobol-first}
+\end{equation}
+\begin{equation}
+  S_{Ti}^j = \frac{\mathbb{E}_{\mathbf{Z}_{-i}}\left[ V_{z_i}(y_j \mid
+  \mathbf{Z}_{-i}) \right]}{V(y_j)} = 1 -
+  \frac{V_{\mathbf{Z}_{-i}}\left( \mathbb{E}_{z_i}[y_j \mid
+  \mathbf{Z}_{-i}] \right)}{V(y_j)},
+  \label{eq:sobol-total}
+\end{equation}
+式中 $\mathbf{Z}_{-i}$ 表示除 $z_i$ 外的其余变量集合。
+
+\subsubsection{设计方案稳定性评估与不确定性传播模型}
+
+\textbf{(1) 蒙特卡洛不确定性传播。}利用拉丁超立方采样(LHS)在扰动空间
+$\mathcal{N}(\mathbf{Z}_0, \boldsymbol{\Sigma}_{\mathbf{Z}})$ 内抽取
+$N$ 组扰动样本点 $\{\mathbf{Z}^{(1)}, \mathbf{Z}^{(2)}, \dots,
+\mathbf{Z}^{(N)}\}$,代入代理模型进行不确定性传播映射,生成性能指标的
+响应概率分布族 $\{y_j^{(1)}, y_j^{(2)}, \dots, y_j^{(N)}\}$。
+
+\textbf{(2) 稳定性评价指标体系。}定义以下三个数学指标定量评价设计方案的
+抗扰动稳定性:
+
+\begin{itemize}
+  \item \textbf{变异系数(Coefficient of Variation, CV)}:评估指标波动的
+  相对分散程度,值越小说明稳定性越好,
+  \begin{equation}
+    CV_j^{pert} = \frac{\sigma_{y_j}}{\mu_{y_j}} =
+    \frac{\sqrt{\frac{1}{N-1}\sum_{k=1}^N \left( y_j^{(k)} - \bar{y}_j
+    \right)^2}}{\bar{y}_j},
+    \label{eq:cv5}
+  \end{equation}
+
+  \item \textbf{95\% 置信区间波动上限(Upper Quantile Bound, P95)}:
+  \begin{equation}
+    y_{j, P95} = \text{Quantile}\left( \{y_j^{(k)}\}, 0.95 \right),
+    \label{eq:p95}
+  \end{equation}
+  物理含义:在 95\% 的扰动工况下,性能指标不会恶化超过此安全阈值;
+
+  \item \textbf{越界失效概率(Failure Probability, $P_{fail}$)}:设工程
+  许可的最大性能恶化容限为 $y_{j, max}^{limit}$,则方案的失效概率定义为:
+  \begin{equation}
+    P_{fail, j} = \mathbb{P}\left( y_j > y_{j, max}^{limit} \right) =
+    \frac{1}{N} \sum_{k=1}^{N} \mathbb{I}\left( y_j^{(k)} >
+    y_{j, max}^{limit} \right),
+    \label{eq:pfail}
+  \end{equation}
+  式中 $\mathbb{I}(\cdot)$ 为示性函数。
+\end{itemize}
+
+\subsubsection{敏感性与稳定性判定准则}
+
+在完成求解后,根据以下三条理论准则对设计方案进行判定:
+
+\begin{enumerate}
+  \item \textbf{强敏感参数判定}:若某些参数的 Sobol 总效应指数
+  $S_{Ti}^j > 0.2$,则判定该参数为系统关键控制参数,在工程加工中必须
+  提高公差等级(如采用高精度微蚀刻加工);
+  \item \textbf{高鲁棒性判定(稳定性合格)}:若在 $\pm 5\%$ 的综合随机
+  扰动下,三项性能指标的变异系数均满足 $CV_j^{pert} < 3\%$,且越界失效概率
+  $P_{fail, j} \approx 0$,则判定该优化方案具有强鲁棒性与高工程可靠性;
+  \item \textbf{安全裕度判定}:比较置信上限 $y_{j, P95}$ 与系统极限
+  熔断值的距离,距离越宽说明系统的工程容错能力与安全裕度越大。
+\end{enumerate}
+
+\subsubsection{设计方案的扰动验证闭环}
+
+为验证前述各问设计方案的工程稳定性,将问题三的综合最优方案
+$\mathbf{X}^*$ 与问题四的鲁棒方案 $\mathbf{X}_{robust}$ 一并代入本问
+的扰动传播模型,在 $\pm 5\%$ 综合随机扰动下分别计算其变异系数
+$CV_j^{pert}$ 与越界失效概率 $P_{fail, j}$,结果对比如
+表~\ref{tab:q5-compare} 所示:
+
+\begin{table}[htbp]
+\centering
+\caption{设计方案在 $\pm 5\%$ 扰动下的稳定性对比}
+\label{tab:q5-compare}
+\begin{tabular}{lcccc}
+\toprule
+方案 & $CV_1^{pert}$ & $CV_2^{pert}$ & $CV_3^{pert}$ & $P_{fail}$ \\
+\midrule
+综合最优方案 $\mathbf{X}^*$  & (代码手填入) & — & — & — \\
+鲁棒方案 $\mathbf{X}_{robust}$ & (代码手填入) & — & — & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+若鲁棒方案的变异系数与失效概率均不劣于综合最优方案,且满足
+$CV_j^{pert} < 3\%$、$P_{fail, j} \approx 0$ 的判定准则,则表明问题四
+所设计的鲁棒方案在加工误差与工况波动下依然保持稳定,进一步验证了从
+"机理建模(问题一)"、"代理建模(问题二)"到"多目标优化(问题三)"、
+"鲁棒设计(问题四)"、再到"扰动验证(问题五)"的完整建模链条的工程
+可信度。
