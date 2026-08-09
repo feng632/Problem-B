@@ -8,9 +8,29 @@
 % =====================================================================
 \section{参考文献}
 
-\begin{thebibliography}{99}
+\makeatletter
+\newenvironment{bibliographywithouttitle}[1]
+  {\list{\@biblabel{\@arabic\c@enumiv}}%
+       {\settowidth\labelwidth{\@biblabel{#1}}%
+        \leftmargin\labelwidth
+        \advance\leftmargin\labelsep
+        \@openbib@code
+        \usecounter{enumiv}%
+        \let\p@enumiv\@empty
+        \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+   \sloppy
+   \clubpenalty4000
+   \@clubpenalty \clubpenalty
+   \widowpenalty4000%
+   \sfcode`\.=\@m}
+  {\def\@noitemerr
+     {\@latex@warning{Empty `bibliographywithouttitle' environment}}%
+   \endlist}
+\makeatother
+
+\begin{bibliographywithouttitle}{99}
 \bibitem{ref1}
 作者一, 作者二. 论文标题[J]. 期刊名称, 2020, 10(3): 12-34.
 \bibitem{ref2}
 作者. 教材标题[M]. 北京: 出版社, 2019.
-\end{thebibliography}
+\end{bibliographywithouttitle}

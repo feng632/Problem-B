@@ -1,18 +1,18 @@
 % =====================================================================
-%  04 模型建立
+%  04 模型的建立与求解
 %  论文的核心章节。每个问题一个小节,写明:
 %   1. 建模思路(为什么用这个模型)
-%   2. 符号定义(引用第 2 节的符号表)
+%   2. 符号定义(引用第 4 节的符号表)
 %   3. 公式推导
 %   4. 模型的解/算法(对应 code/src/ 里的代码)
 % =====================================================================
-\section{模型建立}
+\section{模型的建立与求解}
 
-\subsection{问题一的模型:传热与流动基本机理模型}
+\subsection{问题一:传热与流动基本机理模型的建立与求解}
 
 \subsubsection{控制方程}
 
-基于第 2 节的模型假设,以计算流体力学与传热学理论为依据,对歧管式
+基于第 3 节的模型假设,以计算流体力学与传热学理论为依据,对歧管式
 微通道内冷却介质的流动与换热过程建立控制方程组:
 
 \begin{itemize}
@@ -118,7 +118,34 @@
 三者相互独立、相互制衡,共同构成系统性能评价的完整依据,作为综合评价
 指标具有科学性与合理性。
 
-\subsection{问题二的模型:基于高斯过程回归的代理模型}
+\subsubsection{模型求解与结果分析}
+
+结果见表~\ref{tab:q1}:
+
+\begin{table}[htbp]
+\centering
+\caption{问题一结果}
+\label{tab:q1}
+\begin{tabular}{lcc}
+\toprule
+项目 & 数值 & 说明 \\
+\midrule
+指标 A & 12.34 & 描述 \\
+指标 B & 56.78 & 描述 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+结果如图~\ref{fig:q1} 所示:
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig_q1.png}
+\caption{问题一结果图}
+\label{fig:q1}
+\end{figure}
+
+\subsection{问题二:高斯过程回归代理模型的建立与求解}
 
 \subsubsection{样本数据特征分析与预处理}
 
@@ -202,6 +229,14 @@ $\boldsymbol{\theta} = [\sigma_f, l_1, l_2, l_3, \sigma_n]$ 进行寻优
 $N$ 为样本数。$R^2$ 越接近 1 且 $RMSE$、$MAPE$ 越小,表明模型拟合
 与预测效果越好。
 
-\subsection{问题三的模型}
+\subsubsection{模型求解与结果分析}
+
+(结果分析:……)
+
+\subsection{问题三:多目标优化模型的建立与求解}
 
 (建模思路:……)
+
+\subsubsection{模型求解与结果分析}
+
+(结果分析:……)
