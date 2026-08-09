@@ -31,7 +31,7 @@
 | 角色 | 核心职责 | 主要交付物 |
 |------|----------|------------|
 | **建模手** | 模型设计、假设、公式推导、算法选择、灵敏度分析思路 | 04-models.tex 初稿 + 公式清单 + 算法描述 |
-| **代码手** | 数据清洗、模型实现、数值求解、图表生成、结果复现 | code/src/ 代码 + figures/ 图表 + 05-solution.tex 数值部分 |
+| **代码手** | 数据清洗、模型实现、数值求解、图表生成、结果复现 | code/src/ 代码 + figures/ 图表 + 04-models.tex 求解部分数值 |
 | **论文手** | 论文结构、摘要、语言润色、排版格式、提交把关 | main.tex 终稿 + 摘要 + 参考文献 + 提交物 |
 
 > **谁都不用等谁**:三人各写各的文件,git 随时汇合,不互相阻塞。
@@ -54,10 +54,9 @@
 | `paper/sections/01-problem.tex` | 论文手 | 问题重述 |
 | `paper/sections/02-assumptions.tex` | 建模手 | 模型假设 + 符号说明 |
 | `paper/sections/03-model-analysis.tex` | 建模手 | 问题分析 |
-| `paper/sections/04-models.tex` | **建模手写初稿,论文手润色** | 模型建立(核心!) |
-| `paper/sections/05-solution.tex` | **代码手写数值,论文手润色** | 求解与结果 |
-| `paper/sections/06-sensitivity.tex` | 建模手 | 灵敏度分析 |
-| `paper/sections/07-evaluation.tex` | 建模手 | 模型推广 |
+| `paper/sections/04-models.tex` | **建模手写模型,代码手写求解数值,论文手润色** | 模型的建立与求解(核心,已合并 05) |
+| `paper/sections/06-sensitivity.tex` | 建模手 | 模型评价(检验/灵敏度分析) |
+| `paper/sections/07-evaluation.tex` | 建模手 | 模型推广(并入"评价及推广") |
 | `paper/sections/08-references.tex` | 论文手 | 参考文献 |
 | `paper/sections/09-appendix.tex` | 论文手 | 附录(代码/补充数据) |
 | `paper/figures/` | **代码手生成,论文手引用** | 图文件 |
@@ -107,7 +106,7 @@
 | 公式/模型 | 建模手 → 代码手 | 04-models.tex + 群里发公式截图/文字 |
 | 算法需求 | 建模手 → 代码手 | 群里口头说明 + 写在 04-models.tex 末尾"待实现"清单 |
 | 图表 | 代码手 → 论文手 | `make fig` 生成到 paper/figures/,论文手引用即可 |
-| 数值结果 | 代码手 → 论文手 | 05-solution.tex 的数值段落(代码手写好) |
+| 数值结果 | 代码手 → 论文手 | 04-models.tex 各问题"模型求解与结果分析"小节(代码手写好) |
 | 论文修改意见 | 论文手 → 建模手/代码手 | 群里明确点名,别改别人的文件 |
 
 **推荐的每日节奏:**

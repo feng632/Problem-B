@@ -229,14 +229,76 @@ $\boldsymbol{\theta} = [\sigma_f, l_1, l_2, l_3, \sigma_n]$ 进行寻优
 $N$ 为样本数。$R^2$ 越接近 1 且 $RMSE$、$MAPE$ 越小,表明模型拟合
 与预测效果越好。
 
-\subsubsection{模型求解与结果分析}
-
-(结果分析:……)
-
 \subsection{问题三:多目标优化模型的建立与求解}
 
-(建模思路:……)
+问题三在问题二代理模型的基础上建立多目标优化模型。附件 2 样本数据的
+Pearson 相关系数分析显示,热阻与压降之间存在明显的负相关($r = -0.684$),
+即降低热阻的几何改动往往同时导致压降上升——三项性能指标之间固有的相互
+制约关系,决定了不存在使所有指标同时达到绝对极小的单一点,其解集为
+Pareto 最优解集(帕累托前沿)。因此本问采用"多目标寻优 + 综合决策"
+两阶段策略:先利用带约束的多目标优化算法在参数空间内求取 Pareto 前沿,
+再引入理想点法(TOPSIS 思想)将多目标问题转化为贴近理想解的单目标
+综合决策问题,唯一确定综合最优设计。
 
-\subsubsection{模型求解与结果分析}
+\subsubsection{决策变量与约束条件}
 
-(结果分析:……)
+定义决策变量矢量 $\mathbf{X} = [x_1, x_2, x_3]^T$,根据附件 2 样本数据
+范围及实际物理含义,设置如下边界约束:
+\begin{equation}
+  \begin{cases}
+    0.00 \le x_1 \le 0.30 & (\text{针肋宽度比边界}) \\
+    3.00 \le x_2 \le 4.50 & (\text{歧管深高比边界}) \\
+    0 \le x_3 \le 10, \quad x_3 \in \mathbb{Z}^+ & (\text{针肋排数整数约束})
+  \end{cases}
+  \label{eq:q3-constraints}
+\end{equation}
+
+\subsubsection{目标函数向量}
+
+基于问题二求解得到的高斯过程回归代理模型 $f_{GPR, j}(\mathbf{X})$,
+构造多目标向量最小化函数:
+\begin{equation}
+  \min_{\mathbf{X}} \quad \mathbf{F}(\mathbf{X}) =
+  \left[ f_{Rth}(\mathbf{X}),\ f_{\Delta P}(\mathbf{X}),\
+  f_{\Delta T}(\mathbf{X}) \right]^T,
+  \label{eq:q3-objective}
+\end{equation}
+其中 $f_{Rth}$、$f_{\Delta P}$、$f_{\Delta T}$ 分别为热阻、压降与温度
+非均匀性的代理模型预测函数。
+
+\subsubsection{综合评价准则(理想点法,TOPSIS 思想)}
+
+为消除热阻、压降与温度非均匀性之间的量纲及数量级差异,首先进行
+Min--Max 线性无量纲归一化:
+\begin{equation}
+  \tilde{f}_j(\mathbf{X}) = \frac{f_j(\mathbf{X}) - f_{j,\min}}
+  {f_{j,\max} - f_{j,\min}}, \quad j \in \{1, 2, 3\},
+  \label{eq:minmax}
+\end{equation}
+式中 $f_{j,\min}$ 与 $f_{j,\max}$ 取自附件 2 数据集中各指标的极值边界。
+
+理想最佳状态为 $\mathbf{O}^* = (0, 0, 0)^T$。按均等偏好(权值
+$w_1 = w_2 = w_3 = 1/3$),建立基于欧氏距离最小化的综合优化目标函数
+$D(\mathbf{X})$:
+\begin{equation}
+  \min_{\mathbf{X}} \quad D(\mathbf{X}) =
+  \sqrt{ \sum_{j=1}^{3} w_j \cdot
+  \left[ \tilde{f}_j(\mathbf{X}) \right]^2 },
+  \label{eq:topsis}
+\end{equation}
+其中 $w_j$ 为第 $j$ 项指标的权重(问题四将进一步研究权重变化的影响)。
+
+\subsubsection{模型求解算法流程}
+
+求解算法采用多目标遗传算法(NSGA-II)与 L-BFGS-B 局部梯度搜索结合的
+混合优化策略,具体流程如下:
+
+\begin{enumerate}
+  \item \textbf{全局空间采样}:使用带整数约束的多目标寻优算法在三维参数
+  空间内快速搜寻,获得分布均匀的 Pareto 优选解集;
+  \item \textbf{理想点贴近度计算}:对 Pareto 前沿上的各个解计算其综合
+  目标值 $D(\mathbf{X})$;
+  \item \textbf{离散整数修正}:考虑到针肋排数 $x_3$ 在实际工程中必须为
+  整数排,对连续最优解中的 $x_3$ 进行离散整数约束网格搜索,二次微调
+  $x_1$、$x_2$,锁定工程可行的最优组合。
+\end{enumerate}
