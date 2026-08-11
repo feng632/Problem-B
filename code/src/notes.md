@@ -84,6 +84,29 @@ dT: r2=0.99978039 rmse=0.00016290 mape=0.00015619
 gpr.pkl 现在同时保存了 scaler(键 "_scaler")和 inputs 列名(键 "_input_cols")，
 Q3 优化要用同一套 StandardScaler 把候选点变换到训练空间，不能重新 fit。
 
+## Q2补充:GPR核超参数theta*(04-models.tex:264待回填)
+
+grep了一下paper占位符,发现5.2.2节eq:kernel后面还有个theta*=[sigma_f,l1,l2,l3,sigma_n]
+的表没填,solve_q2.py之前没输出这个。补了提取逻辑(从gpr.kernel_.k1.k1拿
+ConstantKernel、k1.k2拿RBF的length_scale、k2拿WhiteKernel的noise_level),
+结果:
+```
+Rth: sigma_f=20.66  l_alpha=5.04  l_beta=4.52  l_n=4.70  sigma_n=0.00001
+dP:  sigma_f=9.74   l_alpha=4.16  l_beta=6.51  l_n=4.67  sigma_n=0.0197
+dT:  sigma_f=201.38 l_alpha=8.05  l_beta=9.31  l_n=7.84  sigma_n=0.0160
+```
+长度尺度l_i解读:三个输出里l_alpha普遍比l_beta/l_n小(尤其dP和dT),说明
+alpha方向的相关长度更短——GPR认为alpha方向函数变化更剧烈/更需要精细
+插值,这和Q1发现的"alpha对Rth有先降后升的非单调拐点"是一致的信号
+(变化剧烈的方向,length-scale天然会被MLE调小)。sigma_n(观测噪声)全部
+在1e-5~2e-2量级,远小于sigma_f,说明数据里噪声极低(和notes.md开头
+"数据来自仿真非测量"的判断吻合)。
+
+**改完solve_q2.py后gpr.pkl是重新fit的**(n_restarts_optimizer内部用的是
+sklearn全局随机源,没固定种子,每次重跑GPR对象会有微小差异),所以后面
+把solve_q3/q4/q1/q5全部重跑了一遍保持一致,数值变化都在小数点后3-4位,
+结论没变(x*、鲁棒方案、alpha*、最敏感参数结论均一致)。
+
 ## Q3
 
 5.3: NSGA-II(pymoo 0.6.2 mixed-variable)+ 理想点法(w1=w2=w3=1/3)+ 整数邻域
