@@ -5,7 +5,6 @@ import common
 
 import numpy as np
 import joblib as jb
-import itertools
 
 import solve_q3 as q3
 
@@ -28,18 +27,8 @@ def simplex_grid(n=6):
     return np.array(pts)
 
 
-# ---------- 给定权重求最优解:穷举离散(x2,x3)组合 + 一维L-BFGS-B精修x1 ----------
-
-def solve_weighted(w, f_min, f_max, x1_inits=(0.0, 0.075, 0.15, 0.225, 0.3)):
-    """44 种 (x2,x3) 离散组合逐一穷举,每种组合对 x1 多起点 L-BFGS-B,取全局 D 最小"""
-    best = None
-    for x2 in q3.BETA_LEVELS:
-        for x3 in range(q3.BOUNDS["x3"][0], q3.BOUNDS["x3"][1] + 1):
-            for x1_init in x1_inits:
-                x1_r, D_r = q3.refine_at_fixed_x2x3(x2, x3, x1_init, f_min, f_max, w=w)
-                if best is None or D_r < best[3]:
-                    best = (x1_r, x2, x3, D_r)
-    return best  # (x1*, x2*, x3*, D*)
+# 给定权重求最优解:直接复用 solve_q3.global_best(合法(x2,x3)组合穷举 + 一维L-BFGS-B精修x1)
+solve_weighted = q3.global_best
 
 
 # ---------- 第一部分(1)(2): 权重扫描 ----------
@@ -103,6 +92,14 @@ def minimax_regret(candidates, weight_grid, f_min, f_max, D_star_grid):
     return robust_idx, max_regret
 
 
+def cv_of_candidate(X, weight_grid, f_min, f_max):
+    """CV(X) = std(D_W(X))/mean(D_W(X)),在权重网格上评估单个候选X的稳健性(离散系数)"""
+    F = q3.predict(np.array([X]))[0]
+    F_norm = (F - f_min) / (f_max - f_min)
+    D_w = np.sqrt(np.sum(weight_grid * F_norm ** 2, axis=1))
+    return D_w.std() / D_w.mean()
+
+
 def solve():
     f_min, f_max = q3.gpr_value_range()
 
@@ -128,15 +125,23 @@ def solve():
         print(f"-- {name} --")
         print(S)
 
-    # ---- 第二部分: minimax regret ----
+    # ---- 第二部分: minimax regret 鲁棒方案 ----
     q3_res = jb.load(common.DATA_DIR / "q3_result.pkl")
     candidates = q3_res["X_front"]  # 复用Q3的Pareto前沿当候选池
+    D_star_equal = q3_res["D_star"]  # Q3等权重(1/3,1/3,1/3)下的D*,作为epsilon基准
 
     robust_idx, max_regret = minimax_regret(candidates, all_w, f_min, f_max, D_star)
     x_robust = candidates[robust_idx]
+    R_max = max_regret[robust_idx]
+    epsilon = 0.05 * D_star_equal  # eq:minimax: epsilon = 5% * D*(等权重Q3最优值)
+
+    cv_robust = cv_of_candidate(x_robust, all_w, f_min, f_max)
+    cv_equal = cv_of_candidate(np.array(q3_res["x_star"]), all_w, f_min, f_max)
+
     print(f"\n== 鲁棒方案 (minimax regret) ==")
     print(f"X_robust: x1={x_robust[0]:.4f} x2={x_robust[1]:.2f} x3={int(round(x_robust[2]))}")
-    print(f"max_regret = {max_regret[robust_idx]:.6f}")
+    print(f"R_max = {R_max:.6f}   epsilon(5%*D*_Q3) = {epsilon:.6f}   R_max<=epsilon: {R_max <= epsilon}")
+    print(f"CV(X_robust) = {cv_robust:.6f}   CV(X*_Q3等权重解) = {cv_equal:.6f}")
 
     out = {
         "f_min": f_min, "f_max": f_max,
@@ -145,6 +150,8 @@ def solve():
         "sens_matrices": sens_matrices,
         "candidates": candidates, "max_regret": max_regret,
         "x_robust": x_robust, "robust_idx": robust_idx,
+        "R_max": R_max, "epsilon": epsilon,
+        "cv_robust": cv_robust, "cv_equal": cv_equal,
     }
     jb.dump(out, common.DATA_DIR / "q4_result.pkl")
     return out
