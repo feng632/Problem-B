@@ -7,9 +7,10 @@ import common
 import joblib as jb
 
 res = jb.load(common.DATA_DIR / "gpr.pkl")
+outputs = [k for k in res.keys() if not k.startswith("_")]
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-for col, ax in zip(res.keys(), axes):
+for col, ax in zip(outputs, axes):
     ax.scatter(res[col]["y_pred"], res[col]["y_true"])
     ax.axline((0, 0), slope=1, linestyle="--", color="grey")
     ax.set_title(f"{col}")

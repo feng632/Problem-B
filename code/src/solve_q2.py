@@ -56,10 +56,13 @@ def gpr():
             "rmse": mean_squared_error(y_test[y_train_select_col], mu) ** 0.5,
             "mape": mean_absolute_percentage_error(y_test[y_train_select_col], mu),
         }
-        #保存GPR模型文件
+        #保存GPR模型文件(连同scaler一起,Q3要用同一套标准化)
+    result["_scaler"] = scaler
+    result["_input_cols"] = inputs
     jb.dump(result, common.DATA_DIR / "gpr.pkl")
     print("duplicated data: ", data.duplicated(subset=inputs).sum(), "\n")
-    for col, r in result.items():
+    for col in outputs:
+        r = result[col]
         print(f"{col}: r2={r['r2']:.8f} rmse={r['rmse']:.8f} mape={r['mape']:.8f}")
     return result
 
