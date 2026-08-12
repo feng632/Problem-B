@@ -182,14 +182,29 @@ $Re \sim O(10)$,远低于转捩临界值(约 $2300$),与假设 3 的层流判定
   \end{tabular}
 \end{table}
 
-各参数引起的平均相对变化幅度(百分比)与关联式标定结果见
-\textbf{(待回填:由 code/src/solve\_q1.py 输出)}。影响规律如图~\ref{fig:q1}
-所示:
+各参数引起的平均相对变化幅度(百分比)如下:$\alpha$ 从 0.10 增至 0.20,热阻
+平均下降 1.98\%;$\alpha$ 从 0.20 增至 0.30,热阻平均回升 0.90\%;
+$\alpha$ 从 0.10 增至 0.30,压降平均升高 37.60\%;$\beta$ 从 3.00 增至
+4.50,压降平均下降 32.74\%,温度非均匀性平均下降 1.62\%;$n$ 从 2 增至
+10,热阻平均下降 2.18\%。在 $\alpha=0.10,0.15,0.20,0.30$ 处,压降增幅
+分别为 6.17\%、15.28\%、31.53\% 和 72.86\%,说明排数影响随宽度比增大
+而放大。
+
+关联式标定结果如下:
+\begin{align}
+  \Delta P^* &= 0.2404\,\beta^{-0.9819}(1-\alpha)^{-1.2432} n^{0.1681},
+  & R^2 &= 0.8769, \label{eq:dp-corr-fitted} \\
+  R_{th}^* &= 0.7107 + 0.5958(\alpha-0.1399)^2 + 0.0108\beta
+  + 0.0017n - 0.0176\alpha n,
+  & R^2 &= 0.7486. \label{eq:rth-corr-fitted}
+\end{align}
+热阻关联式的 MAPE 为 0.59\%,热阻最优宽度比 $\alpha^*$ 取 GPR
+交叉验证值 0.235。影响规律如图~\ref{fig:q1} 所示:
 
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{figures/fig_q1.png}
-  \caption{结构参数对三项性能指标的影响规律(由求解脚本生成)}
+  \caption{结构参数对三项性能指标的影响规律}
   \label{fig:q1}
 \end{figure}
 
@@ -248,9 +263,27 @@ $y_3$ 为无量纲温度非均匀性 $\Delta T$(取值范围 $0.7740 \sim 0.8731
 
 利用 67 组训练集样本,通过极大似然估计(MLE)对超参数集合
 $\boldsymbol{\theta} = [\sigma_f, l_1, l_2, l_3, \sigma_n]$ 寻优求解,
-得到的最优超参数 $\boldsymbol{\theta}^*$ 见
-\textbf{(待回填:由 code/src/solve\_q2.py 输出,含各长度尺度 $l_i$ 的参数
-  重要性解读)}。对任意新的结构参数 $\mathbf{X}^*$,模型预测的均值为:
+得到的最优超参数 $\boldsymbol{\theta}^*$ 见表~\ref{tab:gpr-hyper}。
+其中长度尺度 $l_i$ 反映各输入维度上响应曲面的变化速率:$l_i$ 越小,该维度上
+函数变化越剧烈,对应参数对输出的影响越显著。由表可见,三个输出上 $l_\alpha$
+均相对较小,表明热阻、压降与温度非均匀性对针肋宽度比的局部变化均较为敏感;
+$l_\beta$ 在压降模型中最小($6.5126$),与 $\beta$ 主要通过流动阻力影响压降
+的机理一致。对任意新的结构参数 $\mathbf{X}^*$,模型预测的均值为:
+
+\begin{table}[htbp]
+  \centering
+  \caption{GPR 最优超参数 $\boldsymbol{\theta}^*$}
+  \label{tab:gpr-hyper}
+  \begin{tabular}{lccccc}
+    \toprule
+    输出指标              & $\sigma_f$ & $l_\alpha$ & $l_\beta$ & $l_n$  & $\sigma_n$         \\
+    \midrule
+    热阻 $R_{th}$       & 20.6602    & 5.0372     & 4.5245    & 4.6980 & $1.0\times10^{-5}$ \\
+    压降 $\Delta P$     & 9.7380     & 4.1600     & 6.5126    & 4.6728 & 0.0197             \\
+    温度非均匀性 $\Delta T$ & 201.3772   & 8.0457     & 9.3081    & 7.8441 & 0.0160             \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 \begin{equation}
   \bar{y}^*_j = \mathbf{k}^T (\mathbf{K} + \sigma_n^2 \mathbf{I})^{-1}
   \mathbf{y}_{train},
@@ -277,6 +310,18 @@ $\boldsymbol{\theta} = [\sigma_f, l_1, l_2, l_3, \sigma_n]$ 寻优求解,
 $N$ 为样本数。$R^2$ 越接近 1 且 $RMSE$、$MAPE$ 越小,表明模型拟合
 与预测效果越好。
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_q2_true_pred.png}
+  \caption{GPR 代理模型预测值与真实值对比(测试集,17 组)}
+  \label{fig:q2-true-pred}
+\end{figure}
+
+GPR 代理模型在测试集上的预测值与真实值的对比如图~\ref{fig:q2-true-pred}
+所示。三指标的散点均紧密分布在 $y=x$ 对角线附近,说明模型的预测值与
+仿真数据高度一致,未出现系统性偏差或异常离群点,代理模型可替代 CFD
+求解器用于后续优化与不确定性传播分析。
+
 \subsection{问题三:多目标优化模型的建立与求解}
 
 问题三在问题二代理模型的基础上建立多目标优化模型。附件 2 样本数据的
@@ -294,7 +339,7 @@ Pearson 相关系数分析显示,热阻与压降之间存在明显的负相关($
 \begin{equation}
   \begin{cases}
     x_1 \in \{0\} \cup [0.10,\ 0.30]          & (\text{针肋宽度比,限定样本支撑范围})   \\
-    x_2 \in \{3.0,\ 3.5,\ 4.0,\ 4.5\}         & (\text{歧管深高比,四档离散取值})          \\
+    x_2 \in \{3.0,\ 3.5,\ 4.0,\ 4.5\}         & (\text{歧管深高比,四档离散取值})     \\
     x_3 \in \{0\} \cup \{2,\ 3,\ \dots,\ 10\} & (\text{针肋排数取值})           \\
     x_1 > 0 \Rightarrow x_3 \ge 2             & (\text{耦合约束:有针肋时排数不小于 2})
   \end{cases}
@@ -352,6 +397,32 @@ $D(\mathbf{X})$;针肋排数 $x_3$ 在实际工程中必须为整数排,因此�
 
 % 待新增:5.3 节结果表(综合最优方案 X* 参数、三指标预测值与综合目标 D),
 % 由 code/src/solve_q3.py 输出,见 FILL_CHECKLIST.md 第 3 节。
+
+\subsubsection{综合最优设计方案}
+
+经 NSGA-II 多目标全局搜索(种群 200、300 代、10 种随机种子拼接前沿)与
+L-BFGS-B 局部精修后,在均等偏好权重下由理想点法确定的综合最优设计方案
+见表~\ref{tab:opt-solution}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{综合最优设计方案(均等权重 $w_1=w_2=w_3=1/3$)}
+  \label{tab:opt-solution}
+  \begin{tabular}{lccccccc}
+    \toprule
+    方案             & $x_1^*$ & $x_2^*$ & $x_3^*$ & $R_{th}^*$ & $\Delta P^*$ & $\Delta T^*$ & $D^*$  \\
+    \midrule
+    $\mathbf{X}^*$ & 0.2247  & 4.50    & 5       & 0.7366     & 0.0917       & 0.7791       & 0.1937 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+结果表明:$\alpha^*=0.2247$ 落在问题一所论证的拐点区域
+($\alpha\approx0.2$)附近,验证了热阻"先降后升"机理规律在优化中的一致性;
+$\beta^*=4.50$ 取样本范围上限,歧管深高比越大则分配层沿程阻力越小,压降与
+温度非均匀性同时受益;$n^*=5$ 为适中排数,在换热强化收益与阻力叠加代价之间
+取得平衡。与附件 2 样本中的最优点相比,该方案在降低压降的同时保持了相近的
+热阻与温度非均匀性水平,三项指标较样本均值均有明显改善。
 
 \subsection{问题四:权重敏感性分析与鲁棒设计}
 
@@ -440,6 +511,62 @@ $\mathbf{e}_j - \frac{1}{3}\mathbf{1}$(分量和为零,保证扰动后仍满足
 
 % 待新增:5.4.1 节三场景最优方案对比表与权重敏感性矩阵 S_X,W 数值,
 % 由 code/src/solve_q4.py 输出,见 FILL_CHECKLIST.md 第 4 节。
+
+\textbf{(4) 三场景最优方案对比。}在权重单纯形 $\boldsymbol{\Delta}^2$
+上采用重心坐标均匀网格($n=6$,共 28 个采样点,含顶点极端场景与内部网格点)
+进行全场景扫描,三个典型场景下的最优方案见表~\ref{tab:scenario-results}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{三场景最优方案对比}
+  \label{tab:scenario-results}
+  \begin{tabular}{lcccccc}
+    \toprule
+    应用场景                     & $x_1^*$ & $x_2^*$ & $x_3^*$ & $D^*$  \\
+    \midrule
+    高性能计算 $(0.6,0.2,0.2)$    & 0.2305  & 4.50    & 6       & 0.2316 \\
+    便携/低功耗设备 $(0.2,0.6,0.2)$ & 0.2159  & 4.50    & 5       & 0.1670 \\
+    高可靠工业器件 $(0.2,0.2,0.6)$  & 0.2247  & 4.50    & 5       & 0.1586 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表可见,三场景的最优 $\beta^*$ 均取 4.50(样本范围上限),表明无论侧重
+何种性能,较大的歧管深高比均有利于降低沿程阻力与改善流量分配均匀性。
+$\alpha^*$ 在不同场景下均在 0.22--0.23 附近,与问题一的拐点分析一致。
+排数 $n^*$ 在高性能计算场景下取 6(稍高排数以强化换热),其余两场景取 5,
+反映不同偏好对散热与泵功之间的取舍差异。
+
+\textbf{(5) 权重敏感性矩阵。}在三个典型场景处分别计算敏感性矩阵
+$\mathbf{S}_{\mathbf{X},\mathbf{W}}$(中心差分,$h=0.05$),结果如下:
+
+\begin{align}
+  \text{高性能计算:}\quad
+  \mathbf{S} &= \begin{bmatrix}
+    0.0238 & -0.0245 & 0.0004 \\
+    0      & 0       & 0      \\
+    0      & 0       & 0
+  \end{bmatrix}, \\[4pt]
+  \text{便携/低功耗:}\quad
+  \mathbf{S} &= \begin{bmatrix}
+    0.0516 & -0.0450 & -0.0061 \\
+    0      & 0       & 0       \\
+    0      & 0       & 0
+  \end{bmatrix}, \\[4pt]
+  \text{高可靠工业:}\quad
+  \mathbf{S} &= \begin{bmatrix}
+    0.0289 & -0.0289 & 0.0001 \\
+    0      & 0       & 0      \\
+    0      & 0       & 0
+  \end{bmatrix}.
+\end{align}
+
+敏感性矩阵显示,仅 $x_1$(针肋宽度比)对权重扰动表现出非零敏感性,
+$x_2$ 与 $x_3$ 因取值离散(四档深高比、整数排数)在局部差分下梯度为零。
+$x_1$ 对 $w_1$(热阻权重)的偏导为正、对 $w_2$(压降权重)的偏导为负,
+与物理规律一致:热阻权重增大时最优宽度比稍增以强化换热,压降权重增大时
+最优宽度比稍降以减小流动阻力。敏感性系数量级较小($10^{-2}$),说明在
+典型场景附近,最优方案对权重扰动具有较好的局部稳定性。
 \subsubsection{鲁棒设计优化模型}
 
 \textbf{(1) 后悔值函数定义。}定义结构设计方案 $\mathbf{X}$ 在权重场景
@@ -519,6 +646,35 @@ $CV(\mathbf{X}^*)$,说明其目标值在权重维度上更加平坦,对偏好变
 
 % 待新增:5.4.2 节鲁棒方案结果表(X_robust 参数、最大后悔值 R_max、CV),
 % 由 code/src/solve_q4.py 输出,见 FILL_CHECKLIST.md 第 4 节。
+
+\textbf{(4) 鲁棒方案求解结果。}在问题三 Pareto 前沿解集与网格候选点构成的
+候选池上,计算各候选方案在全偏好单纯形 28 个采样点上的最大后悔值,取极小者
+得鲁棒解 $\mathbf{X}_{robust}$。鲁棒方案与等权综合方案的对比
+见表~\ref{tab:robust}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{鲁棒方案与等权综合方案对比}
+  \label{tab:robust}
+  \begin{tabular}{lcccccc}
+    \toprule
+    方案                         & $x_1$  & $x_2$ & $x_3$ & $R_{max}$ & $\epsilon$ & $CV$   \\
+    \midrule
+    综合最优 $\mathbf{X}^*$        & 0.2247 & 4.50  & 5     & —         & —          & 0.3254 \\
+    鲁棒方案 $\mathbf{X}_{robust}$ & 0.2387 & 4.50  & 6     & 0.2543    & 0.0097     & 0.0717 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+结果表明:$\mathbf{X}_{robust}$ 的最大后悔值 $R_{max}=0.2543$ 显著大于
+容许上限 $\epsilon=0.0097$($\mathbf{X}^*$ 在均等偏好下 $D^*$ 的 5\%),
+说明不存在单一设计方案能在所有偏好场景下同时逼近各场景的定制最优——
+"无万金油解"的结论本身说明按场景定制或分级设计在工程上是必要的。
+然而,鲁棒方案的 $CV=0.0717$ 远小于综合最优方案的 $CV=0.3254$
+(降低约 78\%),表明鲁棒方案的目标值在权重维度上显著更平坦,
+对偏好变化高度不敏感。鲁棒方案以较小的参数调整($\alpha$ 从 0.2247
+微增至 0.2387,$n$ 从 5 增至 6)换取跨场景稳定性的显著提升,
+在芯片封装开模成本高昂的背景下具有工程价值。
 \subsection{问题五:参数扰动敏感性与稳定性分析}
 
 \subsubsection{参数小范围扰动模型}
@@ -631,6 +787,97 @@ $\vert S_{ij}^{local} \vert$ 模长越大,说明该指标对该参数的一阶�
 
 % 待新增:5.5.2 节 Sobol 指数表(3 指标 × 一阶/总效应)与 LSA 系数表,
 % 由 code/src/solve_q5.py 输出,见 FILL_CHECKLIST.md 第 5 节。
+
+\textbf{(3) 敏感性分析结果。}结构参数层在标称设计点
+$\mathbf{X}^*=(0.2247,4.50,5)$ 处的局部归一化敏感性系数与 Sobol 全局
+敏感性指数分别见表~\ref{tab:lsa} 与表~\ref{tab:sobol}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{局部归一化敏感性系数 $S_{ij}^{local}$(标称点 $\mathbf{X}^*$)}
+  \label{tab:lsa}
+  \begin{tabular}{lccc}
+    \toprule
+    结构参数          & $R_{th}$  & $\Delta P$ & $\Delta T$ \\
+    \midrule
+    $x_1$ (针肋宽度比) & $-0.0089$ & $+0.4271$  & $-0.0001$  \\
+    $x_2$ (歧管深高比) & $-0.1526$ & $-0.8414$  & $-0.1669$  \\
+    $x_3$ (针肋排数)  & $-0.0222$ & $+0.3583$  & $+0.0624$  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由局部敏感性系数可见:压降对各结构参数的敏感性均最高,其中 $\beta$ 的
+负敏感性最强($-0.8414$),与深高比增大降低沿程阻力的机理一致;
+热阻主要对 $\beta$ 敏感($-0.1526$),对 $\alpha$ 与 $n$ 的敏感性较弱,
+与 $\alpha^*$ 附近热阻曲面较平坦的特征吻合。
+
+\begin{table}[htbp]
+  \centering
+  \caption{Sobol 全局敏感性指数(结构参数层,$N=1024$)}
+  \label{tab:sobol}
+  \begin{tabular}{lcccccc}
+    \toprule
+    \multirow{2}{*}{结构参数} & \multicolumn{2}{c}{$R_{th}$} & \multicolumn{2}{c}{$\Delta P$} & \multicolumn{2}{c}{$\Delta T$}                                \\
+    \cmidrule(lr{8pt}){2-3} \cmidrule(lr{8pt}){4-5} \cmidrule(lr{8pt}){6-7}
+                          & $S_i$                        & $S_{Ti}$                       & $S_i$                          & $S_{Ti}$ & $S_i$  & $S_{Ti}$ \\
+    \midrule
+    $x_1$                 & 0.3280                       & 0.3783                         & 0.2664                         & 0.3429   & 0.1996 & 0.2324   \\
+    $x_2$                 & 0.2982                       & 0.3429                         & 0.3802                         & 0.3803   & 0.0581 & 0.0897   \\
+    $x_3$                 & 0.2998                       & 0.3747                         & 0.2767                         & 0.3518   & 0.7000 & 0.7210   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表~\ref{tab:sobol} 可见:三项指标的 Sobol 一阶主效应与总效应差距不大,
+表明结构参数之间的交互效应较弱,各参数对性能的影响以主效应为主。
+温度非均匀性 $\Delta T$ 对针肋排数 $n$ 的总效应高达 $0.7210$,远高于
+其他参数,表明排数是控制温度均匀性的主导因素。三个结构参数的总效应指数
+均高于 $0.2$(判定准则一),即三者均为系统关键控制参数,加工公差均须
+严格控制。敏感性分析的综合可视化结果见图~\ref{fig:sensitivity}。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_sensitivity.png}
+  \caption{敏感性分析综合图:(a) Sobol 总效应指数;(b) 局部归一化敏感性系数;
+  (c) $\pm 5\%$ 扰动下变异系数对比;(d) $\Delta T$ 的 Sobol 一阶与总效应对比}
+  \label{fig:sensitivity}
+\end{figure}
+
+\textbf{(4) 蒙特卡洛不确定性传播结果。}针对结构参数层,采用拉丁超立方采样
+(LHS)在 $\pm 5\%$ 扰动空间($\mathcal{N}(\mathbf{X}^*,
+  \boldsymbol{\Sigma}_{\mathbf{X}})$,$\sigma_{z_i}=\varepsilon
+  z_{i,0}/3$)内抽取 $N=8000$ 组样本,经 GPR 代理模型传播后得到三项指标的
+响应分布,统计结果见表~\ref{tab:mc-results}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{$\pm 5\%$ 结构参数扰动下 MC 不确定性传播结果($N=8000$)}
+  \label{tab:mc-results}
+  \begin{tabular}{lcccc}
+    \toprule
+    指标         & $y_0$  & $CV$   & $y_{P95}$ & $P_{fail}$ \\
+    \midrule
+    $R_{th}$   & 0.7366 & 0.26\% & 0.7392    & 0.00\%     \\
+    $\Delta P$ & 0.0917 & 1.67\% & 0.0942    & 0.00\%     \\
+    $\Delta T$ & 0.7791 & 0.31\% & 0.7821    & 0.00\%     \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表可见,在 $\pm 5\%$ 加工误差下,三项指标的变异系数均远低于 $3\%$
+阈值,越界失效概率均为零,表明设计方案对加工误差具有充分鲁棒性。
+压降的 CV 相对较高($1.67\%$),与其对各结构参数的局部敏感性均较强的
+特征一致。
+
+\textbf{(5) 工况参数层线性化估算。}工况参数($\dot{m}$、$T_{in}$、$q_v$)
+按式~\eqref{eq:op-linear} 基于无量纲标度关系进行一阶近似:
+$\dot{m}$ 对 $R_{th}$ 与 $\Delta T$ 的敏感性约为 $-1/3$,对 $\Delta P$
+约为 $-1$;$T_{in}$ 与 $q_v$ 的一阶贡献在无量纲化过程中近似抵消。
+在 $\pm 5\%$ 综合工况扰动下(三参数同向拉满最坏情形),$R_{th}$ 相对变化
+约 $-1.67\%$,$\Delta P$ 约 $-5.00\%$,$\Delta T$ 约 $-1.67\%$。
+该估算基于机理标度关系而非代理模型梯度,置信度低于结构参数层,仅用于
+工况层的一阶近似评估。
 \subsubsection{设计方案稳定性评估与不确定性传播模型}
 
 \textbf{(1) 蒙特卡洛不确定性传播。}针对结构参数层,利用拉丁超立方采样
@@ -698,8 +945,8 @@ $P_{fail, j}$,结果对比如表~\ref{tab:q5-compare} 所示:
     \toprule
     方案                         & $CV_1^{pert}$ & $CV_2^{pert}$ & $CV_3^{pert}$ & $P_{fail}$ \\
     \midrule
-    综合最优方案 $\mathbf{X}^*$      & (代码手填入)       & —             & —             & —          \\
-    鲁棒方案 $\mathbf{X}_{robust}$ & (代码手填入)       & —             & —             & —          \\
+    综合最优方案 $\mathbf{X}^*$      & 0.27\%        & 1.76\%        & 0.31\%        & 0.00\%     \\
+    鲁棒方案 $\mathbf{X}_{robust}$ & 0.26\%        & 1.88\%        & 0.32\%        & 0.00\%     \\
     \bottomrule
   \end{tabular}
 \end{table}
