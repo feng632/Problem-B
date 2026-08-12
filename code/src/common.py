@@ -19,16 +19,44 @@ import matplotlib
 matplotlib.use("Agg")  # 服务器/无界面环境也能出图
 
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
+
+# 中文字体优先级:Noto Sans CJK SC > Noto Sans SC > Source Han Sans SC > SimHei > Microsoft YaHei
+# 取第一个系统已安装的字体,找不到才用默认(此时中文会显示方框)
+_FONT_CANDIDATES = [
+    "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC",
+    "Source Han Sans CN", "SimHei", "Microsoft YaHei",
+]
+_installed = {f.name for f in font_manager.fontManager.ttflist}
+_zh_font = next((f for f in _FONT_CANDIDATES if f in _installed), None)
 
 plt.rcParams.update({
-    "font.family": "SimHei",            # Windows 中文字体;Linux 无此字体时改为 Noto Sans CJK SC
+    "font.family": _zh_font if _zh_font else "sans-serif",  # 中文字体
     "axes.unicode_minus": False,        # 解决负号显示为方块的问题
     "figure.dpi": 150,                  # 出图清晰度(国赛要求 300dpi 打印,提交前调高重跑)
-    "savefig.dpi": 150,
+    "savefig.dpi": 300,                 # 论文印刷 300 dpi
     "figure.figsize": (8, 5),
     "axes.grid": True,
-    "grid.alpha": 0.4,
+    "grid.alpha": 0.3,
+    "grid.linewidth": 0.6,
+    "axes.linewidth": 0.8,              # 坐标轴线略细,出版级观感
+    "axes.titlesize": 12,
+    "axes.labelsize": 11,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 9,
+    "legend.framealpha": 0.9,
+    "lines.linewidth": 1.6,
 })
+
+# Okabe-Ito 色盲安全配色(统一全项目用色,避免每人一版颜色)
+# 语义约定:
+#   指标:Rth=蓝 dP=橙 dT=绿
+#   结构参数:x1(α)=蓝 x2(β)=橙 x3(n)=绿
+#   方案对比:X*=蓝 X_robust=橙
+OKABE_ITO = ["#0072B2", "#D55E00", "#009E73", "#CC79A7",
+             "#E69F00", "#56B4E9", "#F0E442", "#000000"]
+COLOR_RTH, COLOR_DP, COLOR_DT = OKABE_ITO[0], OKABE_ITO[1], OKABE_ITO[2]
 
 
 def savefig(name: str) -> Path:

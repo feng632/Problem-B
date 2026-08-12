@@ -1,249 +1,214 @@
 % =====================================================================
-%  09 附录
-%  正文外的支撑内容:核心代码、补充数据、长表格等。
+%  09 附录 — B题项目源代码
 %  由 main.tex 的 appendices 环境包裹,放在正文最后。
-%  代码用 lstlisting 环境(模板已加载 listings 宏包)。
+%  使用 lstinputlisting 直接读入实际源文件,保证与运行代码一致。
 % =====================================================================
 
-\section{核心代码}
-
-\subsection{问题一:半经验关联式标定与 GPR 交叉验证}
-
-\begin{lstlisting}[language=python, basicstyle=\small\ttfamily, numbers=left, numberstyle=\tiny]
-# --- 压降幂律关联式 ln(dP*) = lnC + a*ln(beta) + b*ln(1-alpha) + c*ln(n) ---
-def fit_dp_corr(df):
-    y = np.log(df["dP"].to_numpy())
-    X = np.column_stack([
-        np.ones(len(df)),
-        np.log(df["beta"].to_numpy()),
-        np.log(1 - df["alpha"].to_numpy()),
-        np.log(df["n"].to_numpy()),
-    ])
-    coef, *_ = np.linalg.lstsq(X, y, rcond=None)
-    lnC, a, b, c = coef
-    C = np.exp(lnC)
-    dp_pred = C * df["beta"]**a * (1 - df["alpha"])**b * df["n"]**c
-    r2 = r2_score(df["dP"], dp_pred)
-    mape = mean_absolute_percentage_error(df["dP"], dp_pred)
-    return {"C": C, "a": a, "b": b, "c": c, "r2": r2, "mape": mape, "pred": dp_pred}
-
-# --- 热阻二次结构关联式 Rth* = R0 + c1*(alpha-alpha*)^2 + c2*beta + c3*n + c4*alpha*n ---
-def rth_model(X, R0, c1, c2, c3, c4, alpha_star):
-    alpha, beta, n = X
-    return R0 + c1*(alpha-alpha_star)**2 + c2*beta + c3*n + c4*alpha*n
-
-def fit_rth_corr(df):
-    X = (df["alpha"].to_numpy(), df["beta"].to_numpy(), df["n"].to_numpy())
-    y = df["Rth"].to_numpy()
-    p0 = [0.75, 0.1, 0.0, 0.0, 0.0, 0.2]
-    popt, _ = curve_fit(rth_model, X, y, p0=p0, maxfev=20000)
-    R0, c1, c2, c3, c4, alpha_star = popt
-    rth_pred = rth_model(X, *popt)
-    r2 = r2_score(y, rth_pred)
-    mape = mean_absolute_percentage_error(y, rth_pred)
-    return {"R0": R0, "c1": c1, "c2": c2, "c3": c3, "c4": c4,
-            "alpha_star": alpha_star, "r2": r2, "mape": mape, "pred": rth_pred}
-
-# --- alpha* GPR交叉验证:在 GPR 上扫描 alpha 求 Rth 均值 argmin ---
-def gpr_alpha_star(gprs, scaler, beta_grid, n_grid, n_points=41):
-    alphas = np.linspace(0.10, 0.30, n_points)
-    avg = []
-    for a in alphas:
-        vals = [gprs["Rth"].predict(scaler.transform([[a, b, n]]))[0]
-                for b in beta_grid for n in n_grid]
-        avg.append(np.mean(vals))
-    i = np.argmin(avg)
-    return alphas[i], avg[i]
-\end{lstlisting}
-
-\subsection{问题二:GPR 代理模型构建(Constant+RBF+White 复合核)}
-
-\begin{lstlisting}[language=python, basicstyle=\small\ttfamily, numbers=left, numberstyle=\tiny]
-# --- 数据划分与标准化 ---
-X_train, X_test, y_train, y_test = train_test_split(
-    data[["alpha","beta","n"]], data[["Rth","dP","dT"]],
-    test_size=0.2, random_state=676767)
-scaler = StandardScaler()
-X_train_std = scaler.fit_transform(X_train)
-X_test_std  = scaler.transform(X_test)
-
-# --- 复合核: Constant + RBF(各向异性) + White ---
-kernel = (ConstantKernel(1.0, (1e-10, 1e10))
-          * RBF([1.0, 1.0, 1.0], (1e-10, 1e10))
-          + WhiteKernel(1.0, (1e-10, 1e10)))
-
-# --- 对每个输出维度独立训练 GPR (MISO 架构) ---
-result = {}
-for y_col in ["Rth", "dP", "dT"]:
-    gpr = GaussianProcessRegressor(
-        kernel=kernel, alpha=1e-8,
-        normalize_y=True, n_restarts_optimizer=10)
-    gpr.fit(X_train_std, y_train[y_col])
-    mu, sigma = gpr.predict(X_test_std, return_std=True)
-
-    # 提取 MLE 最优超参数 theta* = [sigma_f, l1, l2, l3, sigma_n]
-    k_cr, k_w = gpr.kernel_.k1, gpr.kernel_.k2
-    sigma_f = np.sqrt(k_cr.k1.constant_value)
-    length_scales = k_cr.k2.length_scale
-    sigma_n = np.sqrt(k_w.noise_level)
-
-    result[y_col] = {
-        "gpr": gpr, "y_true": y_test[y_col].to_numpy(),
-        "y_pred": mu, "y_std": sigma,
-        "r2"  : r2_score(y_test[y_col], mu),
-        "rmse": np.sqrt(mean_squared_error(y_test[y_col], mu)),
-        "mape": mean_absolute_percentage_error(y_test[y_col], mu),
-        "theta_star": {"sigma_f": sigma_f,
-                       "length_scales": length_scales,
-                       "sigma_n": sigma_n},
-    }
-
-result["_scaler"] = scaler
-joblib.dump(result, DATA_DIR / "gpr.pkl")
-\end{lstlisting}
-
-\subsection{问题三:NSGA-II + L-BFGS-B 混合多目标优化与理想点法决策}
-
-\begin{lstlisting}[language=python, basicstyle=\small\ttfamily, numbers=left, numberstyle=\tiny]
-# --- 混合变量 NSGA-II 问题定义(mode 变量处理针肋排数耦合约束) ---
-class SinkOptProblem(Problem):
-    def __init__(self):
-        super().__init__(
-            vars={
-                "mode": Choice(options=[0, 1]),        # 0=无针肋, 1=有针肋
-                "x1"  : Real(bounds=(0.10, 0.30)),     # 针肋宽度比
-                "x2"  : Choice(options=[3.0, 3.5, 4.0, 4.5]),  # 歧管深高比(四档)
-                "x3"  : Integer(bounds=(2, 10)),       # 针肋排数
-            },
-            n_obj=3,
-        )
-    def _evaluate(self, X, out, *args, **kwargs):
-        arr = np.array([to_physical(x) for x in X])
-        out["F"] = predict(arr)  # GPR 预测 [Rth, dP, dT]
-
-# --- 多种子拼接 Pareto 前沿 ---
-def run_nsga2_multiseed(pop_size=200, n_gen=300, seeds=range(10)):
-    X_all, F_all = [], []
-    for seed in seeds:
-        problem = SinkOptProblem()
-        algorithm = NSGA2(pop_size=pop_size,
-            sampling=MixedVariableSampling(),
-            mating=MixedVariableMating(
-                eliminate_duplicates=MixedVariableDuplicateElimination()),
-            eliminate_duplicates=MixedVariableDuplicateElimination())
-        result = pymoo_minimize(problem, algorithm,
-            termination=("n_gen", n_gen), seed=seed, verbose=False)
-        X_all.append(np.array([to_physical(x) for x in result.X]))
-        F_all.append(result.F)
-    return np.vstack(X_all), np.vstack(F_all)
-
-# --- 理想点法:固定 (x2,x3) → L-BFGS-B 精修 x1,穷举全局最优 ---
-def refine_at_fixed_x2x3(x2, x3, x1_init, f_min, f_max, w):
-    if x3 == 0:
-        return 0.0, ideal_dist(np.array([0.0, x2, x3]), f_min, f_max, w)
-    def obj(x1):
-        F = predict(np.array([[x1[0], x2, x3]]))[0]
-        F_norm = (F - f_min)/(f_max - f_min)
-        return np.sqrt(np.sum(w * F_norm**2))
-    result = lbfgsb(obj, x0=[x1_init], bounds=[(0.10, 0.30)],
-                    method="L-BFGS-B")
-    return result.x[0], result.fun
-
-def global_best(w, f_min, f_max, x1_inits=(0.10,0.15,0.20,0.25,0.30)):
-    best = None
-    for x2, x3 in ALL_COMBOS:          # 40 种合法 (x2,x3) 组合
-        inits = (0.0,) if x3 == 0 else x1_inits
-        for x1_init in inits:
-            x1_r, D_r = refine_at_fixed_x2x3(x2, x3, x1_init,
-                                              f_min, f_max, w=w)
-            if best is None or D_r < best[3]:
-                best = (x1_r, x2, x3, D_r)
-    return best  # (x1*, x2*, x3*, D*)
-\end{lstlisting}
-
-\subsection{问题四:最小最大后悔值鲁棒优化}
-
-\begin{lstlisting}[language=python, basicstyle=\small\ttfamily, numbers=left, numberstyle=\tiny]
-# --- 权重单纯形网格采样 ---
-def simplex_grid(n=6):
-    pts = []
-    for i in range(n+1):
-        for j in range(n+1-i):
-            pts.append([i/n, j/n, (n-i-j)/n])
-    return np.array(pts)
-
-# --- Minimax Regret 鲁棒解搜索 ---
-def minimax_regret(candidates, weight_grid, f_min, f_max, D_star_grid):
-    F_cand = predict(candidates)               # (N, 3)
-    F_norm = (F_cand - f_min)/(f_max - f_min)  # Min-Max 归一化
-
-    max_regret = np.full(len(candidates), -np.inf)
-    for w, D_opt in zip(weight_grid, D_star_grid):
-        D_w = np.sqrt(np.sum(w * F_norm**2, axis=1))
-        regret = D_w - D_opt
-        max_regret = np.maximum(max_regret, regret)
-
-    robust_idx = np.argmin(max_regret)
-    return robust_idx, max_regret
-
-# --- 候选方案的跨场景稳定性评估(变异系数) ---
-def cv_of_candidate(X, weight_grid, f_min, f_max):
-    F = predict(np.array([X]))[0]
-    F_norm = (F - f_min)/(f_max - f_min)
-    D_w = np.sqrt(np.sum(weight_grid * F_norm**2, axis=1))
-    return D_w.std() / D_w.mean()
-\end{lstlisting}
-
-\subsection{问题五:Sobol 全局敏感性 + LHS 蒙特卡洛不确定性传播}
-
-\begin{lstlisting}[language=python, basicstyle=\small\ttfamily, numbers=left, numberstyle=\tiny]
-# --- Sobol 全局敏感性指数(一阶 S_i + 总效应 S_Ti, N=1024) ---
-SOBOL_PROBLEM = {
-    "num_vars": 3, "names": ["x1","x2","x3"],
-    "bounds": [[0.10, 0.30], [3.00, 4.50], [2, 10]]}
-
-def sobol_indices(N=1024):
-    param_values = sobol_sample.sample(SOBOL_PROBLEM, N)
-    result = {}
-    for col in ["Rth", "dP", "dT"]:
-        X_std = scaler.transform(param_values)
-        Y = gprs[col].predict(X_std)
-        Si = sobol_analyze.analyze(SOBOL_PROBLEM, Y, print_to_console=False)
-        result[col] = {"S1": Si["S1"], "ST": Si["ST"]}
-    return result
-
-# --- 局部归一化敏感性系数(中心差分,标称点 X0 处) ---
-def lsa_structural(X0, h_rel=1e-3):
-    F0 = predict(X0)[0]
-    S = np.zeros((3, 3))
-    for i in range(3):
-        h = max(abs(X0[i]) * h_rel, 1e-4)
-        Xp, Xm = X0.copy(), X0.copy()
-        Xp[i] += h; Xm[i] -= h
-        dF = (predict(Xp)[0] - predict(Xm)[0])/(2*h)
-        S[i] = dF * X0[i] / F0
-    return S  # S[i,j] = dGj/dxi * xi0/yj0
-
-# --- LHS 蒙特卡洛不确定性传播(结构参数层, N_MC=8000, eps=5%) ---
-def lhs_montecarlo(X0, eps=0.05, N=8000, seed=676767):
-    sigma = eps * np.abs(X0) / 3   # 3-sigma 落在 +-5% 内
-    sampler = qmc.LatinHypercube(d=3, seed=seed)
-    U = sampler.random(N)
-    Z = norm.ppf(U)                 # 标准正态分位数 → N(0,1)
-    samples = X0 + Z * sigma        # 扰动样本(N, 3)
-    F = predict(samples)            # GPR 传播(N, 3)
-    F0 = predict(X0)[0]
-    cv = F.std(axis=0, ddof=1) / F.mean(axis=0)
-    y_limit = 1.10 * F0             # 越界阈值:+10%
-    p_fail = (F > y_limit).mean(axis=0)
-    return {"F0": F0, "cv": cv, "p_fail": p_fail, "F_samples": F}
-
-# --- 工况参数层:基于无量纲标度关系的机理线性化近似 ---
-# mdot→Rth: S≈-1/3 (Nu~Re^1/3), mdot→dP: S≈-1 (f~1/Re)
-# Tin: 一阶抵消 S≈0; qv: 分子分母同步缩放 S≈0
-OP_SENSITIVITY = {
-    "mdot": {"Rth": 0.0, "dP": -1.0, "dT": 0.0},
-    "Tin":  {"Rth": 0.0, "dP":  0.0, "dT": 0.0},
-    "qv":   {"Rth": 0.0, "dP":  0.0, "dT": 0.0},
+% ---- 全局代码显示风格(附录用,紧凑排版) ----
+\lstset{
+    language=Python,
+    basicstyle=\footnotesize\ttfamily,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=5pt,
+    breaklines=true,
+    breakatwhitespace=false,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+    frame=single,
+    framerule=0.4pt,
+    framesep=6pt,
+    rulecolor=\color{gray!40},
+    tabsize=4,
+    showstringspaces=false,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
 }
-\end{lstlisting}
+
+\section{项目源代码}
+
+以下为问题一至问题五建模所用的全部 Python 源程序,按模块依赖关系排列:
+公共模块 $\rightarrow$ 逐题求解 $\rightarrow$ 画图脚本。
+
+\subsection{\texttt{common.py} — 公共配置模块}
+
+项目级路径、matplotlib 全局样式(中文字体、DPI、网格)及统一图片保存函数。
+所有求解和画图脚本均依赖此模块。
+
+\lstinputlisting[
+    caption={common.py},
+    label={lst:common},
+    firstnumber=auto,
+]{../code/src/common.py}
+
+\newpage
+\subsection{\texttt{solve\_q1.py} — 问题一:半经验关联式标定与机理分析}
+
+\begin{enumerate}[label=(\arabic*)]
+    \item 压降幂律关联式 $\ln\Delta P^*=\ln C+a\ln\beta+b\ln(1-\alpha)+c\ln n$ 的最小二乘标定
+    \item 热阻二次结构关联式 $R_{th}^*=R_0+c_1(\alpha-\alpha^*)^2+c_2\beta+c_3 n+c_4\alpha n$ 的非线性拟合
+    \item 基于 GPR 代理模型的控制变量影响幅度定量表
+    \item $\alpha^*$ 拐点的 GPR 交叉验证(逐点扫描求 $\bar{R}_{th}^*$ 的 argmin)
+    \item 机理关联式与数据一致性定量检验(MAPE, $R^2$)
+\end{enumerate}
+
+\lstinputlisting[
+    caption={solve\_q1.py},
+    label={lst:solve_q1},
+    firstnumber=auto,
+]{../code/src/solve_q1.py}
+
+\newpage
+\subsection{\texttt{solve\_q2.py} — 问题二:GPR 代理模型构建}
+
+以 $\alpha,\beta,n$ 为输入、$R_{th}^*,\Delta P^*,\Delta T^*$ 为输出,
+采用 Constant$\times$RBF(各向异性)+White 复合核构建高斯过程回归代理模型。
+按 8:2 留出法划分训练/测试集,对每个输出维度独立训练(MISO 架构),
+并提取 MLE 最优核超参数 $\theta^*=[\sigma_f,l_1,l_2,l_3,\sigma_n]$。
+训练完成的模型保存为 \texttt{gpr.pkl},供后续问题三--五复用。
+
+\lstinputlisting[
+    caption={solve\_q2.py},
+    label={lst:solve_q2},
+    firstnumber=auto,
+]{../code/src/solve_q2.py}
+
+\newpage
+\subsection{\texttt{solve\_q3.py} — 问题三:混合多目标优化与决策}
+
+三段式混合策略:
+\begin{enumerate}[label=(\arabic*)]
+    \item 混合变量 NSGA-II (mode 变量处理 $\alpha=0\Leftrightarrow n=0$ 的耦合约束),多种子拼接 Pareto 前沿
+    \item 在全体合法 $(\beta,n)$ 离散组合上穷举,L-BFGS-B 精修 $\alpha$
+    \item 均等权重理想点法选出综合最优方案 $\mathbf{X}^*$
+\end{enumerate}
+
+\lstinputlisting[
+    caption={solve\_q3.py},
+    label={lst:solve_q3},
+    firstnumber=auto,
+]{../code/src/solve_q3.py}
+
+\newpage
+\subsection{\texttt{solve\_q4.py} — 问题四:鲁棒优化}
+
+\begin{enumerate}[label=(\arabic*)]
+    \item 三类典型应用场景(高性能计算、便携低功耗、高可靠工业)与权重单纯形网格的扫描
+    \item 敏感性矩阵 $\mathbf{S}_{ij}=\partial x_i/\partial w_j$ (中心差分)
+    \item 基于 Minimax Regret 准则的鲁棒方案搜索
+    \item 跨场景稳定性评估(权重空间变异系数 CV)
+\end{enumerate}
+复用 \texttt{solve\_q3} 的 \texttt{global\_best} 函数作为加权最优求解器。
+
+\lstinputlisting[
+    caption={solve\_q4.py},
+    label={lst:solve_q4},
+    firstnumber=auto,
+]{../code/src/solve_q4.py}
+
+\newpage
+\subsection{\texttt{solve\_q5.py} — 问题五:敏感性分析与不确定性传播}
+
+结构参数层(GPR 直接支撑):
+\begin{itemize}
+    \item Sobol 全局敏感性指数(一阶 $S_i$ 与总效应 $S_{Ti}$, $N=1024$)
+    \item 局部归一化敏感性系数 $S_{ij}^{local}$ (中心差分)
+    \item LHS 蒙特卡洛不确定性传播($N=8000$, $\pm5\%$ 扰动)
+\end{itemize}
+工况参数层(机理标度近似):基于无量纲传热/流动标度关系的一阶线性化估计。
+验证闭环:对比综合最优方案 $\mathbf{X}^*$ 与鲁棒方案的变异系数和失效概率。
+
+\lstinputlisting[
+    caption={solve\_q5.py},
+    label={lst:solve_q5},
+    firstnumber=auto,
+]{../code/src/solve_q5.py}
+
+\newpage
+\subsection{\texttt{fig\_q1.py} — 问题一配图}
+
+绘制 $\beta=3.75$ 固定时不同 $n$ 取值下 $\alpha$-$R_{th}^*$ 曲线族(标注 $\alpha^*$ 拐点)
+和 $\alpha$-$\Delta P^*$ 曲线族。
+
+\lstinputlisting[
+    caption={fig\_q1.py},
+    label={lst:fig_q1},
+    firstnumber=auto,
+]{../code/src/fig_q1.py}
+
+\subsection{\texttt{fig\_q2.py} — 问题二配图}
+
+三个输出指标($R_{th}^*,\Delta P^*,\Delta T^*$)的 GPR 预测值与真实值散点对比图,
+附 $y=x$ 参考线。
+
+\lstinputlisting[
+    caption={fig\_q2.py},
+    label={lst:fig_q2},
+    firstnumber=auto,
+]{../code/src/fig_q2.py}
+
+\newpage
+\subsection{\texttt{fig\_sensitivity.py} — 问题五配图}
+
+四合一敏感性分析图板:
+(a) Sobol 总效应指数柱状图;(b) 局部归一化敏感性系数热力图(RdBu\_r 发散色);
+(c) $\pm5\%$ 扰动下变异系数对比(含工况线性叠加);
+(d) $\Delta T$ 的一阶主效应与总效应对比。
+
+\lstinputlisting[
+    caption={fig\_sensitivity.py},
+    label={lst:fig_sensitivity},
+    firstnumber=auto,
+]{../code/src/fig_sensitivity.py}
+
+\newpage
+\subsection{\texttt{fig\_pareto.py} — 问题三配图}
+
+Pareto 前沿的三目标两两投影散点图,点色按理想点距离 $D$ 着色(viridis),
+$\bigstar$ 标记综合最优 $\mathbf{F}^*$,支撑"三目标冲突、不存在单一最优"的论证。
+
+\lstinputlisting[
+    caption={fig\_pareto.py},
+    label={lst:fig_pareto},
+    firstnumber=auto,
+]{../code/src/fig_pareto.py}
+
+\newpage
+\subsection{\texttt{fig\_weight\_sweep.py} — 问题四配图}
+
+全偏好空间扫描图:权重单纯形(重心坐标投影)上 31 个采样点,
+(a) 按最优排数 $n^*$ 分区着色,标注典型场景点与等权点;
+(b) 按综合距离 $D^*(\mathbf{W})$ 连续着色,展示偏好空间内最优解的光滑变化。
+
+\lstinputlisting[
+    caption={fig\_weight\_sweep.py},
+    label={lst:fig_weight_sweep},
+    firstnumber=auto,
+]{../code/src/fig_weight_sweep.py}
+
+\newpage
+\subsection{\texttt{fig\_mc\_dist.py} — 问题五配图}
+
+$\pm 5\%$ 扰动下三项指标的蒙特卡洛响应分布直方图 + KDE,标注标称值 $y_0$、
+95\% 分位数 $y_{P95}$ 与 CV/$P_{fail}$ 数值,越界阈值 $1.10y_0$ 在分布
+尾部之外用右缘箭头示意。
+
+\lstinputlisting[
+    caption={fig\_mc\_dist.py},
+    label={lst:fig_mc_dist},
+    firstnumber=auto,
+]{../code/src/fig_mc_dist.py}
+
+\newpage
+\subsection{\texttt{fig\_regret.py} — 问题四配图}
+
+候选池 2000 个方案的最大后悔值分布直方图,标注鲁棒方案 $R_{max}$、
+容许上限 $\epsilon$ 与等权综合最优 $\mathbf{X}^*$ 的最大后悔值
+(后者在脚本内按与候选池同口径重新计算)。
+
+\lstinputlisting[
+    caption={fig\_regret.py},
+    label={lst:fig_regret},
+    firstnumber=auto,
+]{../code/src/fig_regret.py}

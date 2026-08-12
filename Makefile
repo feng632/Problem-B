@@ -67,7 +67,7 @@ help:
 # ---------- figures: run every *_fig.py, then sync to paper ----------
 # 脚本列表写死(Windows 版 make 的 glob/wildcard 在 GBK 编码下有兼容问题,
 # 动态枚举不可靠)。新增画图脚本时在下面加一行即可。
-FIG_SCRIPTS := fig_example.py fig_q1.py fig_q2.py fig_sensitivity.py
+FIG_SCRIPTS := fig_q1.py fig_q2.py fig_sensitivity.py fig_pareto.py fig_weight_sweep.py fig_mc_dist.py fig_regret.py
 
 fig:
 	@cd $(CODE) && for f in $(FIG_SCRIPTS); do echo "  running $$f"; $(PY) src/$$f || exit 1; done

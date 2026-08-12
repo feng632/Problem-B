@@ -13,8 +13,49 @@
 \usepackage{url}             % 网页链接
 \usepackage{subcaption}      % 子图
 
+% ---------- 标题与强调文字:使用具有真实粗体字形的微软雅黑 ----------
+\newCJKfontfamily\strongfont[
+    BoldFont={Microsoft YaHei Bold}
+]{Microsoft YaHei}
+
+% 模板用 \@startsection 重定义了各级标题(cumcmthesis.cls:471-482),
+% 这里显式指定 Microsoft YaHei Bold,避免 SimHei 缺少粗体字形时回退为常规字重。
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+    {-3.5ex \@plus -1ex \@minus -.2ex}%
+    {2.3ex \@plus.2ex}%
+    {\centering\strongfont\Large\bfseries\boldmath}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+    {-3.25ex\@plus -1ex \@minus -.2ex}%
+    {1.5ex \@plus .2ex}%
+    {\strongfont\large\bfseries\boldmath}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+    {-3.25ex\@plus -1ex \@minus -.2ex}%
+    {1.5ex \@plus .2ex}%
+    {\strongfont\normalsize\bfseries\boldmath}}
+\makeatother
+
+% ---------- 图表标题:加粗 ----------
+% 模板 captionsetup 虽含 bf,但宋体无粗体字形,中文标题实际不显粗。
+% 与各级标题一致改用 Microsoft YaHei Bold,覆盖模板默认的 song 字体。
+% 注意:类型级设置优先于全局设置,必须按 figure/table 分别显式覆盖。
+\DeclareCaptionFont{strongcaption}{\strongfont\bfseries}
+\captionsetup[figure]{font={strongcaption,minusfour}}
+\captionsetup[table]{font={strongcaption,minusfour}}
+
+% 摘要页局部强调,模仿参考论文中问题标签与关键结论加粗的版式。
+\newcommand{\absstrong}[1]{{\strongfont\bfseries\boldmath #1}}
+\renewcommand\abstractname{{\strongfont\bfseries 摘要}}
+\makeatletter
+\renewcommand*\mcm@cap@keywordsname{\strongfont\bfseries 关键字}
+\makeatother
+
+% 等宽字体:DejaVu Sans Mono(TeX Live 自带,Unicode 覆盖全),
+% 避免附录代码列表中 α/β/∝ 等 Unicode 字符显示为空白。
+\setmonofont{DejaVu Sans Mono}
+
 % ---------- 论文信息(比赛开始后填写) ----------
-\title{高性能芯片热管理系统优化}      % 论文题目
+\title{{\strongfont\bfseries 高性能芯片热管理系统优化}} % 论文题目
 \tihao{B}                            % 题号 A/B/C/D/E/F
 \baominghao{000000}                  % 报名号(从官网获取)
 \schoolname{学校名称}
@@ -31,48 +72,40 @@
 \maketitle
 
 \begin{abstract}
-    在高性能芯片功率密度持续升高的背景下,歧管式微通道液冷结构需要同时兼顾
-    散热能力、泵功消耗与芯片表面温度均匀性。本文以针肋宽度比、歧管深高比
-    和针肋排数为设计变量,以热阻、压降和温度非均匀性为评价指标,建立了从机理
-    分析、代理建模到多目标优化与鲁棒评估的完整求解流程。
+    针对高性能芯片歧管式微通道液冷结构中散热能力、泵功消耗与温度均匀性
+    相互制约的问题,本文以针肋宽度比、歧管深高比和针肋排数为设计变量,以热阻、
+    压降和温度非均匀性为评价指标,构建了\absstrong{机理建模、代理预测、多目标寻优、
+        偏好鲁棒设计与扰动评估}相衔接的求解框架。
 
-    对问题一,基于 CFD 与传热学理论建立流固耦合控制方程,并通过无量纲分析说明
-    附件数据处于 $Pr\approx7.0$、$Re\sim O(10)$ 的层流工况。控制变量结果表明:
-    针肋宽度比对热阻呈"先降后升"的非单调影响,热阻最优区域位于
-    $\alpha\approx0.2$ 附近;歧管深高比由 3.00 增至 4.50 时,压降平均降低
-    32.74\%;针肋排数增加会强化换热,但也使压降上升,且增幅随宽度比增大而放大。
-    压降幂律关联式与热阻二次结构关联式的标定结果分别达到 $R^2=0.8769$ 和
-    $R^2=0.7486$,热阻关联式的 MAPE 为 0.59\%,验证了上述机理判断。
+    对\absstrong{问题一},依据质量守恒、动量守恒、能量守恒及固体导热方程建立流固耦合
+    控制模型,并给出三项性能指标的统一定义。通过无量纲化提取雷诺数、普朗特数
+    和结构参数比等主导因素,再依据达西摩擦、局部阻力叠加及热阻串联机理构造
+    \absstrong{压降幂律关联式与热阻半经验关联式},结合控制变量分析揭示各结构参数对
+    流动阻力、换热能力和温度均匀性的作用方向及其耦合关系。
 
-    对问题二,以 84 组样本中的三项结构参数为输入、三项性能指标为输出,构建
-    Constant+RBF+White 复合核的高斯过程回归代理模型,并按 8:2 留出法检验其
-    泛化能力。测试集上热阻、压降和温度非均匀性的 $R^2$ 分别约为 1.0000、
-    0.9997 和 0.9998,对应 RMSE 分别为 $9.95\times10^{-6}$、
-    $4.77\times10^{-4}$ 和 $1.63\times10^{-4}$。结果表明代理模型能在样本
-    支撑范围内稳定替代 CFD 求解器,为后续优化和不确定性传播提供快速评价函数。
+    对\absstrong{问题二},对结构参数进行标准化处理,分别以三项性能指标为输出建立
+    \absstrong{Constant+\allowbreak RBF+\allowbreak White 复合核高斯过程回归模型},形成多输入--单输出代理映射。
+    采用留出法划分训练集与测试集,并以决定系数、均方根误差和平均绝对百分比误差
+    检验拟合与泛化能力,从而获得可用于后续寻优和不确定性传播的快速性能评价函数。
 
-    对问题三,采用 NSGA-II 全局搜索、L-BFGS-B 局部精修与整数离散修正相结合的
-    混合优化策略,并用均等权重理想点法确定综合最优方案。所得设计为
-    $\mathbf{X}^*=(0.2247,4.50,5)$,三项预测指标分别为
-    $(0.7366,0.0917,0.7791)$,综合距离 $D^*=0.1937$。该方案的宽度比位于问题一
-    识别的拐点区域,深高比取样本上限以降低沿程阻力,排数则在换热强化收益与
-    阻力叠加代价之间取得平衡;回代验证偏差小于 0.05\%。
+    对\absstrong{问题三},将高斯过程代理模型作为目标函数,在物理加工约束和样本支撑域内
+    建立热阻、压降与温度非均匀性同时最小化的多目标优化模型。采用
+    \absstrong{NSGA-II 全局搜索、L-BFGS-B 局部精修与整数离散修正}相结合的混合策略
+    求取 Pareto 前沿,再经 Min--Max 无量纲化和均等权重理想点法完成综合决策,
+    得到兼顾三项性能的设计方案,并通过代理模型回代检验其可行性与自洽性。
 
-    对问题四,进一步考察高性能计算、便携低功耗和高可靠工业器件三类偏好场景。
-    三类场景的最优歧管深高比均为 4.50,最优宽度比集中在 0.22--0.23 附近,
-    说明较大深高比和拐点附近宽度比具有稳定优势。基于最小最大后悔值准则得到
-    鲁棒方案 $\mathbf{X}_{robust}=(0.2387,4.50,6)$。虽然不存在能同时逼近
-    所有场景定制最优的单一方案,但鲁棒方案的权重空间变异系数由 0.3254 降至
-    0.0717,降低约 78\%,显著提升了跨场景稳定性。
+    对\absstrong{问题四},在指标权重单纯形上设置代表性偏好场景,建立由偏好权重到最优
+    结构参数的敏感性映射。以各场景定制最优方案为基准定义后悔值,进而采用
+    \absstrong{最小最大后悔值准则}构建鲁棒优化模型,使候选方案在最不利偏好下的综合
+    性能损失尽可能小;同时结合最大后悔值与综合性能变异系数评价方案对权重变化的稳定性。
 
-    对问题五,在综合最优方案附近引入 $\pm5\%$ 的结构参数扰动并进行蒙特卡洛
-    不确定性传播,同时用无量纲标度关系估计流量、入口温度和发热功率等工况扰动
-    的一阶影响。结果显示,温度非均匀性对针肋排数最敏感,其 Sobol 总效应指数为
-    0.7210;三个结构参数的总效应指数均超过 0.2,均应作为加工公差控制重点。在
-    $\pm5\%$ 扰动下,三项性能指标的变异系数均低于 3\%,越界失效概率均为零,
-    表明所选方案具有较好的工程稳定性。
+    对\absstrong{问题五},将加工误差与运行工况波动分层处理。结构参数层由代理模型计算
+    局部归一化敏感性系数和 Sobol 全局敏感性指数,工况参数层依据无量纲标度关系
+    进行小扰动一阶估计;随后采用拉丁超立方采样与蒙特卡洛传播获得性能响应分布,
+    以变异系数、置信上限和越界失效概率判定稳定性。该方法识别了需要重点控制的
+    加工参数,并表明所选方案在设定的小扰动范围内具有较好的工程稳定性。
 
-    \keywords{针肋宽度比;歧管深高比;高斯过程回归;多目标优化;鲁棒设计}
+    \keywords{\absstrong{歧管式微通道};\absstrong{高斯过程回归};\absstrong{多目标优化};\absstrong{最小最大后悔值};\absstrong{Sobol 敏感性分析}}
 \end{abstract}
 
 % 目录(电子版可不打印,如需要取消注释):

@@ -4,16 +4,16 @@
 %  建模手写公式、代码手写代码、论文手排版都用同一套符号。
 %  新符号出现时,更新此表并推送,大家在群里同步。
 %
-%  排版说明:符号较多,切分成两个表、分两页连续排放。
-%  用 \clearpage 保证每表独占一页(浮动体队列清空,不产生空白页)。
+%  排版说明:符号较多,切分成四个表连续排放,\small 字号省页。
+%  用 [H] 强制按文档顺序落位,避免浮动体漂到后续章节。
 % =====================================================================
-\clearpage
 \section{符号说明}
 
-% ---------- 表一:传热与流动物理量 ----------
-\begin{table}[h]
+% ---------- 表一~表四:连续排放,[H] 钉死顺序 ----------
+\begin{table}[H]
 \centering
 \caption{主要符号说明(一):传热与流动物理量}
+\small
 \begin{tabular}{lll}
 \toprule
 符号 & 含义 & 单位 \\
@@ -50,12 +50,12 @@ $Pr$       & 普朗特数 & — \\
 \end{tabular}
 \end{table}
 
-\clearpage
 
 % ---------- 表二:代理模型量 ----------
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{主要符号说明(二):代理模型量}
+\small
 \begin{tabular}{lll}
 \toprule
 符号 & 含义 & 单位 \\
@@ -87,12 +87,12 @@ $N$             & 样本数 & — \\
 \end{tabular}
 \end{table}
 
-\clearpage
 
 % ---------- 表三:优化模型量 ----------
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{主要符号说明(三):优化模型量}
+\small
 \begin{tabular}{lll}
 \toprule
 符号 & 含义 & 单位 \\
@@ -124,12 +124,12 @@ $\nabla_{\mathbf{W}}$ & 关于权重矢量的梯度算子 & — \\
 \end{tabular}
 \end{table}
 
-\clearpage
 
 % ---------- 表四:扰动敏感性与稳定性分析量 ----------
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{主要符号说明(四):扰动敏感性与稳定性分析量}
+\small
 \begin{tabular}{lll}
 \toprule
 符号 & 含义 & 单位 \\
