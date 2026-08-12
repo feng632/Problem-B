@@ -1,36 +1,61 @@
 % =====================================================================
 %  08 参考文献
 %  用 thebibliography 手动编号(国赛最稳妥的方案,不依赖外部工具)。
-%  常用格式:
-%   [1] 作者. 题名[J]. 期刊名, 年, 卷(期): 页码.
-%   [2] 作者. 题名[M]. 出版地: 出版社, 年.
-%  在正文中用 \cite{key} 引用;凡列入参考文献的,正文中必须被引用。
+%  格式:
+%   [N] 作者. 题名[J]. 期刊名, 年, 卷(期): 页码.     (期刊)
+%   [N] 作者. 题名[M]. 出版地: 出版社, 年.            (书籍)
+%  正文中用 \cite{key} 引用;编号按正文首次出现顺序排列。
 % =====================================================================
-\section{参考文献}
+% 注意:cumcmthesis 重定义的 thebibliography 环境自带 \section*{\refname} 标题,
+% 此处不再重复写 \section{参考文献} 避免双标题。
+\begin{thebibliography}{99}
 
-\makeatletter
-\newenvironment{bibliographywithouttitle}[1]
-  {\list{\@biblabel{\@arabic\c@enumiv}}%
-       {\settowidth\labelwidth{\@biblabel{#1}}%
-        \leftmargin\labelwidth
-        \advance\leftmargin\labelsep
-        \@openbib@code
-        \usecounter{enumiv}%
-        \let\p@enumiv\@empty
-        \renewcommand\theenumiv{\@arabic\c@enumiv}}%
-   \sloppy
-   \clubpenalty4000
-   \@clubpenalty \clubpenalty
-   \widowpenalty4000%
-   \sfcode`\.=\@m}
-  {\def\@noitemerr
-     {\@latex@warning{Empty `bibliographywithouttitle' environment}}%
-   \endlist}
-\makeatother
+\bibitem{Tuckerman1981}
+Tuckerman~D~B, Pease~R~F~W. High-performance heat sinking for VLSI[J].
+IEEE Electron Device Letters, 1981, 2(5): 126--129.
 
-\begin{bibliographywithouttitle}{99}
-\bibitem{ref1}
-作者一, 作者二. 论文标题[J]. 期刊名称, 2020, 10(3): 12-34.
-\bibitem{ref2}
-作者. 教材标题[M]. 北京: 出版社, 2019.
-\end{bibliographywithouttitle}
+\bibitem{White2016}
+White~F~M. Fluid Mechanics (8th ed.)[M]. New York: McGraw-Hill, 2016.
+
+\bibitem{Yang2006}
+杨世铭, 陶文铨. 传热学(第4版)[M]. 北京: 高等教育出版社, 2006.
+
+\bibitem{Rasmussen2006}
+Rasmussen~C~E, Williams~C~K~I. Gaussian Processes for Machine Learning[M].
+Cambridge: MIT Press, 2006.
+
+\bibitem{Hwang1981}
+Hwang~C~L, Yoon~K. Multiple Attribute Decision Making: Methods and
+Applications[M]. Berlin: Springer-Verlag, 1981.
+
+\bibitem{Deb2002}
+Deb~K, Pratap~A, Agarwal~S, et al. A fast and elitist multiobjective genetic
+algorithm: NSGA-II[J]. IEEE Transactions on Evolutionary Computation, 2002,
+6(2): 182--197.
+
+\bibitem{Byrd1995}
+Byrd~R~H, Lu~P, Nocedal~J, et al. A limited memory algorithm for bound
+constrained optimization[J]. SIAM Journal on Scientific Computing, 1995,
+16(5): 1190--1208.
+
+\bibitem{Chen2005}
+陈宝林. 最优化理论与算法(第2版)[M]. 北京: 清华大学出版社, 2005.
+
+\bibitem{Savage1951}
+Savage~L~J. The theory of statistical decision[J]. Journal of the American
+Statistical Association, 1951, 46(253): 55--67.
+
+\bibitem{Sobol2001}
+Sobol~I~M. Global sensitivity indices for nonlinear mathematical models and
+their Monte Carlo estimates[J]. Mathematics and Computers in Simulation,
+2001, 55(1--3): 271--280.
+
+\bibitem{McKay1979}
+McKay~M~D, Beckman~R~J, Conover~W~J. A comparison of three methods for
+selecting values of input variables in the analysis of output from a computer
+code[J]. Technometrics, 1979, 21(2): 239--245.
+
+\bibitem{Tao2001}
+陶文铨. 数值传热学(第2版)[M]. 西安: 西安交通大学出版社, 2001.
+
+\end{thebibliography}
