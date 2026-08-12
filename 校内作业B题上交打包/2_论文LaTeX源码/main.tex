@@ -1,0 +1,187 @@
+% =====================================================================
+%  数学建模竞赛论文 — 主文件(基于国赛 cumcmthesis 官方模板 v2.8)
+%
+%  编译方式:make pdf (latexmk -xelatex,勿用 pdflatex)
+%  章节内容按节拆分在 sections/ 下,队员同时写不同文件避免冲突
+%  图片统一放 figures/,由 code/src/*_fig.py 生成
+%
+%  团队信息填在下方对应字段,勿改模板其他结构
+% =====================================================================
+\documentclass[withoutpreface,bwprint]{cumcmthesis} % 电子版:去掉封面与编号页
+
+\usepackage[most]{tcolorbox} % 提示框(模板示例用)
+\usepackage{url}             % 网页链接
+\usepackage{subcaption}      % 子图
+
+% ---------- 标题与强调文字:使用具有真实粗体字形的微软雅黑 ----------
+\newCJKfontfamily\strongfont[
+    BoldFont={Microsoft YaHei Bold}
+]{Microsoft YaHei}
+
+% 模板用 \@startsection 重定义了各级标题(cumcmthesis.cls:471-482),
+% 这里显式指定 Microsoft YaHei Bold,避免 SimHei 缺少粗体字形时回退为常规字重。
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+    {-3.5ex \@plus -1ex \@minus -.2ex}%
+    {2.3ex \@plus.2ex}%
+    {\centering\strongfont\Large\bfseries\boldmath}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+    {-3.25ex\@plus -1ex \@minus -.2ex}%
+    {1.5ex \@plus .2ex}%
+    {\strongfont\large\bfseries\boldmath}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
+    {-3.25ex\@plus -1ex \@minus -.2ex}%
+    {1.5ex \@plus .2ex}%
+    {\strongfont\normalsize\bfseries\boldmath}}
+\makeatother
+
+% ---------- 图表标题:加粗 ----------
+% 模板 captionsetup 虽含 bf,但宋体无粗体字形,中文标题实际不显粗。
+% 与各级标题一致改用 Microsoft YaHei Bold,覆盖模板默认的 song 字体。
+% 注意:类型级设置优先于全局设置,必须按 figure/table 分别显式覆盖。
+\DeclareCaptionFont{strongcaption}{\strongfont\bfseries}
+\captionsetup[figure]{font={strongcaption,minusfour}}
+\captionsetup[table]{font={strongcaption,minusfour}}
+
+% 摘要页局部强调,模仿参考论文中问题标签与关键结论加粗的版式。
+\newcommand{\absstrong}[1]{{\strongfont\bfseries\boldmath #1}}
+\renewcommand\abstractname{{\strongfont\bfseries 摘要}}
+\makeatletter
+\renewcommand*\mcm@cap@keywordsname{\strongfont\bfseries 关键字}
+\makeatother
+
+% 等宽字体:DejaVu Sans Mono(TeX Live 自带,Unicode 覆盖全),
+% 避免附录代码列表中 α/β/∝ 等 Unicode 字符显示为空白。
+\setmonofont{DejaVu Sans Mono}
+
+% ---------- 论文信息(比赛开始后填写) ----------
+\title{{\strongfont\bfseries 高性能芯片热管理系统优化}} % 论文题目
+\tihao{B}                            % 题号 A/B/C/D/E/F
+\baominghao{000000}                  % 报名号(从官网获取)
+\schoolname{学校名称}
+\membera{队员一}
+\memberb{队员二}
+\memberc{队员三}
+\supervisor{指导老师}                % 无指导老师可留空
+\yearinput{2026}
+\monthinput{08}
+\dayinput{08}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    针对高性能芯片歧管式微通道液冷结构中散热能力、泵功消耗与温度均匀性
+    相互制约的问题,本文以针肋宽度比、歧管深高比和针肋排数为设计变量,以热阻、
+    压降和温度非均匀性为评价指标,构建了\absstrong{机理建模、代理预测、多目标寻优、
+        偏好鲁棒设计与扰动评估}相衔接的求解框架。
+
+    对\absstrong{问题一},依据质量守恒、动量守恒、能量守恒及固体导热方程建立流固耦合
+    控制模型,并给出三项性能指标的统一定义。通过无量纲化提取雷诺数、普朗特数
+    和结构参数比等主导因素,再依据达西摩擦、局部阻力叠加及热阻串联机理构造
+    \absstrong{压降幂律关联式与热阻半经验关联式},结合控制变量分析揭示各结构参数对
+    流动阻力、换热能力和温度均匀性的作用方向及其耦合关系。
+
+    对\absstrong{问题二},对结构参数进行标准化处理,分别以三项性能指标为输出建立
+    \absstrong{Constant+\allowbreak RBF+\allowbreak White 复合核高斯过程回归模型},形成多输入--单输出代理映射。
+    采用留出法划分训练集与测试集,并以决定系数、均方根误差和平均绝对百分比误差
+    检验拟合与泛化能力,从而获得可用于后续寻优和不确定性传播的快速性能评价函数。
+
+    对\absstrong{问题三},将高斯过程代理模型作为目标函数,在物理加工约束和样本支撑域内
+    建立热阻、压降与温度非均匀性同时最小化的多目标优化模型。采用
+    \absstrong{NSGA-II 全局搜索、L-BFGS-B 局部精修与整数离散修正}相结合的混合策略
+    求取 Pareto 前沿,再经 Min--Max 无量纲化和均等权重理想点法完成综合决策,
+    得到兼顾三项性能的设计方案,并通过代理模型回代检验其可行性与自洽性。
+
+    对\absstrong{问题四},在指标权重单纯形上设置代表性偏好场景,建立由偏好权重到最优
+    结构参数的敏感性映射。以各场景定制最优方案为基准定义后悔值,进而采用
+    \absstrong{最小最大后悔值准则}构建鲁棒优化模型,使候选方案在最不利偏好下的综合
+    性能损失尽可能小;同时结合最大后悔值与综合性能变异系数评价方案对权重变化的稳定性。
+
+    对\absstrong{问题五},将加工误差与运行工况波动分层处理。结构参数层由代理模型计算
+    局部归一化敏感性系数和 Sobol 全局敏感性指数,工况参数层依据无量纲标度关系
+    进行小扰动一阶估计;随后采用拉丁超立方采样与蒙特卡洛传播获得性能响应分布,
+    以变异系数、置信上限和越界失效概率判定稳定性。该方法识别了需要重点控制的
+    加工参数,并表明所选方案在设定的小扰动范围内具有较好的工程稳定性。
+
+    \keywords{\absstrong{歧管式微通道};\absstrong{高斯过程回归};\absstrong{多目标优化};\absstrong{最小最大后悔值};\absstrong{Sobol 敏感性分析}}
+\end{abstract}
+
+% 目录(电子版可不打印,如需要取消注释):
+% \tableofcontents
+
+% ========== 正文各节 ==========
+\section{问题重述}
+
+\subsection{问题背景}
+
+随着高性能芯片的集成度和功率密度不断提高,散热已成为影响芯片性能、寿命
+及封装可靠性的关键因素。散热不及时会形成局部热点,引起结温升高、性能下降
+甚至器件失效,因此需要在有限空间和能耗下实现高效、均匀的散热。
+
+本文研究歧管式微通道液冷热管理系统\cite{Tuckerman1981}。系统采用去离子水冷却、氮化铝衬底,
+通过歧管分配层和针肋强化换热,改善传统微通道压降较大、温度分布不均等问题。
+芯片散热区域为 $10\times10$~mm$^2$ 的方形区域,内部布置多条平行微通道,
+并在各歧管单元对应区域内设置针肋强化结构;冷却液由顶部入口经歧管层分配
+后流入微通道换热层,最终从侧部出口流出。主要结构参数为针肋宽度比、歧管
+深高比和针肋排数,性能指标为热阻、压降及温度非均匀性。
+
+\subsection{问题提出}
+
+\subsubsection{问题一}
+
+首先,结合传热学和流体力学的基本原理,分析冷却液在歧管分配层和微通道换热层
+中的流动、换热及芯片导热过程。以针肋宽度比、歧管深高比和针肋排数为输入参数,
+以热阻、压降和温度非均匀性为输出指标,建立结构参数与系统性能之间的机理模型。
+在此基础上,分别讨论各结构参数对三项指标的影响方向和变化规律,分析散热能力、
+流动阻力与温度均匀性之间可能存在的制约关系,并说明选取三项指标进行综合评价
+的合理性。
+
+\subsubsection{问题二}
+
+附件2给出了不同结构参数组合下系统性能指标的样本数据。利用这些数据,以三项结构
+参数作为模型输入,以热阻、压降和温度非均匀性作为模型输出,建立能够近似替代复杂
+数值计算或实验过程的代理模型,刻画结构参数与性能指标之间的非线性映射关系。
+同时,通过训练集与测试集划分、交叉验证或误差指标等方法,检验模型的拟合精度、
+泛化能力和预测稳定性,为后续优化计算提供可靠的性能评价工具。
+
+\subsubsection{问题三}
+
+在问题二代理模型的基础上,将针肋宽度比、歧管深高比和针肋排数作为待确定的设计
+变量,以热阻、压降和温度非均匀性同时最小化作为优化目标,并将附件给出的参数范围
+作为可行域约束,建立多目标优化模型。由于降低热阻、减小压降和改善温度均匀性
+之间可能存在冲突,需要结合指标无量纲化、权重设置或综合评价准则,从候选解中筛选
+出兼顾各项性能的综合最优方案,并给出相应的结构参数取值。
+
+\subsubsection{问题四}
+
+不同应用场景对散热能力、泵功消耗和温度均匀性的重视程度不同,因此需要研究三项
+指标权重变化对最优设计方案的影响。通过设置具有代表性的权重组合,比较不同偏好
+下最优结构参数、目标函数值及方案排序的变化,判断优化结果对权重扰动的敏感程度。
+进一步从候选方案中选取在较大权重范围内性能波动较小、排名稳定或综合损失较低的
+鲁棒设计方案,并说明其判定标准以及优势。
+
+\subsubsection{问题五}
+
+实际制造过程中不可避免会产生尺寸加工误差,系统运行时也可能受到流量、温度等工况
+波动的影响,使实际结构参数和工作状态偏离设计值。针对这些因素,在最优方案附近对
+关键参数进行小范围单因素或多因素扰动,观察热阻、压降和温度非均匀性的变化幅度,
+计算相应的敏感性指标,识别对系统性能影响较大的关键因素。最后,通过比较扰动前后
+的性能变化和方案稳定程度,评估设计方案的敏感性与稳定性。
+
+\input{sections/03-model-analysis}
+\input{sections/02-assumptions}
+\input{sections/02b-symbols}
+\input{sections/04-models}
+\input{sections/06-sensitivity}
+\input{sections/07-evaluation}
+\input{sections/08-references}
+\input{sections/10-ai-declaration}
+
+\newpage
+\begin{appendices}
+    \input{sections/09-appendix}
+\end{appendices}
+
+\end{document}

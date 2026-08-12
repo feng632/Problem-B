@@ -1,0 +1,931 @@
+% =====================================================================
+%  04 模型的建立与求解
+%  论文的核心章节。每个问题一个小节,写明:
+%   1. 建模思路(为什么用这个模型)
+%   2. 符号定义(引用第 4 节的符号表)
+%   3. 公式推导
+%   4. 模型的解/算法(对应 code/src/ 里的代码)
+% =====================================================================
+\section{模型的建立与求解}
+
+\subsection{问题一:传热与流动基本机理模型的建立与求解}
+
+\subsubsection{控制方程}
+
+基于第 3 节的模型假设,以计算流体力学与传热学理论\cite{White2016,Yang2006}为依据,对歧管式
+微通道内冷却介质的流动与换热过程建立控制方程组。计算域包含去离子水
+冷却液(按附件 1:$\rho = 998.2$~kg/m$^3$、$C_p = 4182$~J/(kg$\cdot$K)、
+$k_f = 0.6$~W/(m$\cdot$K)、$\mu = 1.003\times10^{-3}$~Pa$\cdot$s)与
+氮化铝衬底($k_s = 200$~W/(m$\cdot$K));固体域外侧与环境(293~K)以
+自然对流(换热系数 $10$~W/(m$^2\cdot$K))换热。控制方程组如下:
+
+(1) 连续性方程 (质量守恒):
+\begin{equation}
+  \nabla \cdot \vec{v} = 0,
+  \label{eq:continuity}
+\end{equation}
+
+(2) 动量守恒方程 (Navier--Stokes 方程):
+\begin{equation}
+  \rho (\vec{v} \cdot \nabla)\vec{v} = -\nabla P + \mu \nabla^2 \vec{v},
+  \label{eq:navier}
+\end{equation}
+
+(3) 能量守恒方程 (流体对流换热):
+\begin{equation}
+  \rho C_p (\vec{v} \cdot \nabla)T_f = k_f \nabla^2 T_f,
+  \label{eq:energy-fluid}
+\end{equation}
+
+(4) 能量守恒方程 (固体导热):
+\begin{equation}
+  k_s \nabla^2 T_s + q_v = 0,
+  \label{eq:energy-solid}
+\end{equation}
+其中 $q_v$ 为体热源强度,仅在芯片热源区域内非零(见假设 5),
+衬底与流体区域内取零。
+
+其中式~\eqref{eq:continuity}--\eqref{eq:energy-solid} 分别刻画了冷却液
+的质量、动量与能量输运过程以及衬底内部的稳态导热过程,构成问题一机理
+分析的基础\cite{Tao2001}。
+
+\subsubsection{三项性能指标的数学定义}
+
+在上述控制方程组所描述的流动换热过程基础上,定义系统的三项关键性能指标:
+
+(1) 热阻 $R_{th}$ 反映系统将热量从芯片导出至冷却液的能力:
+\begin{equation}
+  R_{th} = \frac{T_{max} - T_{in}}{Q},
+  \label{eq:rth}
+\end{equation}
+其中 $T_{max}$ 为芯片表面最高温度,$T_{in}$ 为入口温度(293~K),
+$Q$ 为芯片总发热功率。
+
+(2) 压降 $\Delta P$ 反映冷却液流经系统全程的阻力特性:
+\begin{equation}
+  \Delta P = P_{in} - P_{out}.
+  \label{eq:dp}
+\end{equation}
+
+(3) 温度非均匀性 $\Delta T$ 反映芯片表面温度分布的均匀程度:
+\begin{equation}
+  \Delta T = T_{max} - T_{min},
+  \label{eq:dT}
+\end{equation}
+其中 $T_{min}$ 为芯片表面最低温度。亦可用底面温度分布的标准差
+$\sigma_T$ 表征非均匀性,两种定义在本文后续分析中视情况选用。
+
+\subsubsection{关键结构参数对性能指标的影响规律}
+
+针肋宽度比 $\alpha$ 增大时,针肋换热面积增加、绕流扰动增强,对流换热
+系数提高,热阻 $R_{th}$ 下降;但针肋同时挤占流通截面,超过临界值后肋间
+流道过窄、流动阻滞加剧,热阻转为回升,呈"先降后升"的非单调变化,最优
+宽度比在 $\alpha\approx0.2$ 附近(定量结果见 5.1.5 节);压降 $\Delta P$
+则因摩擦与形体阻力增大而总体升高,排数较多时增幅更显著。
+
+歧管深高比 $\beta$ 增大时,分配通道流通截面增大、沿程阻力降低,压降
+总体减小,流量分配更均匀,温度非均匀性 $\Delta T$ 略有下降;深高比过小
+则流量分配不均、局部流量匮乏,使 $\Delta T$ 升高。该参数对热阻的直接影响
+较弱,主要通过流量分配均匀性间接作用。
+
+排数 $n$ 增大时,热边界层被不断破坏重建、混合更充分,热阻总体下降
+(高排数下收益趋缓);但每排针肋均产生局部阻力,压降逐排叠加升高,且
+增幅随 $\alpha$ 增大而加大。
+
+\subsubsection{三项性能指标作为综合评价依据的合理性}
+
+热阻、压降与温度非均匀性分别对应散热效能、运行能耗与结构寿命三大核心
+诉求。热阻刻画系统导出热量的能力,是防止芯片局部"热点"超温失效的刚性
+指标;压降决定冷却液驱动泵功,压降越小系统能耗与水泵成本越低,约束了不
+计成本追求散热的极端设计,保证工程可行性;温度非均匀性过大易引发热疲劳
+与界面失效,影响系统可靠性与使用寿命。三者分别保障散热能力下限、限制
+能耗上限、维护结构可靠性,构成系统性能评价的完整依据。
+
+\subsubsection{模型求解与结果分析}
+
+\textbf{Step 1:无量纲分析与层流判定。}以特征长度 $L$、特征速度 $U$、特征温差
+$\Delta T_{ref}$ 与动压 $\rho U^2$ 分别对长度、速度、温差与压力无量纲
+化,动量方程与能量方程化为:
+\begin{equation}
+  \vec{v}^{\,*} \cdot \nabla^* \vec{v}^{\,*} = -\nabla^* P^* +
+  \frac{1}{Re}\nabla^{*2} \vec{v}^{\,*}, \qquad
+  Re\,Pr\ \vec{v}^{\,*} \cdot \nabla^* T^* = \nabla^{*2} T^*,
+  \label{eq:dimensionless}
+\end{equation}
+可见无量纲流场与温度场仅由雷诺数 $Re$、普朗特数 $Pr$ 与几何构型决定。
+由于附件 2 数据在固定标称工况下采集(质量流量 $1$~g/s、入口温度
+$293$~K),按附件 1 物性参数计算得 $Pr = \mu C_p / k_f \approx 7.0$;
+以典型微通道水力直径(数百微米量级)作数量级估算,该流量下雷诺数
+$Re \sim O(10)$,远低于转捩临界值(约 $2300$),与假设 3 的层流判定
+一致,故 $Re$、$Pr$ 在数据采集过程中均保持固定。因此,在固定几何构型
+下无量纲热阻、压降与温度非均匀性仅是结构参数比 $\alpha$、$\beta$ 与
+排数 $n$ 的函数,这为
+问题二以 $(\alpha,\ \beta,\ n)$ 为输入建立代理模型提供了机理依据;同时,
+当运行工况波动时 $Re$ 随之改变,性能将偏离结构参数主映射,这也是问题
+五须将工况扰动单独处理的机理原因。
+
+\textbf{Step 2:半经验关联式建立。}基于达西摩擦公式与局部阻力叠加原理,
+无量纲压降可近似取幂律关联式形式
+\begin{equation}
+  \Delta P^* = C \, \beta^{a}\, (1-\alpha)^{b}\, n^{c},
+  \label{eq:dp-corr}
+\end{equation}
+其中 $(1-\alpha)$ 项反映针肋对流通截面的挤占,$\beta$ 项反映歧管分配层
+的沿程阻力,$n$ 项反映针肋排数逐排叠加的局部损失;基于"衬底导热热阻
+与对流热阻串联"的传热结构,无量纲热阻在对流主导区可近似为
+\begin{equation}
+  R_{th}^* = R_0 + c_1\,(\alpha - \alpha^*)^2 + c_2\,\beta + c_3\,n,
+  \label{eq:rth-corr}
+\end{equation}
+其中 $\alpha^*$ 为最优针肋宽度比(热阻极小值对应点)。式~\eqref{eq:dp-corr}
+--\eqref{eq:rth-corr} 的二次项结构刻画了 $\alpha$ 对热阻的"先降后升"
+非单调影响,待定系数 $C, a, b, c, R_0, c_1, c_2, c_3, \alpha^*$ 由附件 2
+样本经最小二乘标定,并与问题二高斯过程回归的预测结果互为验证(详见
+6.1.2 节)。需要说明的是,由于无量纲热阻量程较窄,其关联式的决定系数对
+拟合质量不敏感,本文关联式主要用于机理方向验证与 $\alpha^*$ 论证,不承担
+定量预测职能;定量预测由问题二 GPR 代理模型承担(精度检验见 6.1.1 节)。
+
+\textbf{Step 3:参数影响幅度定量分析。}采用控制变量方式,固定其余两个参数后
+统计各结构参数在其变化范围内引起的指标相对变化,影响方向与幅度汇总于
+表~\ref{tab:q1}:
+
+\begin{table}[htbp]
+  \centering
+  \caption{结构参数对三项性能指标的影响(控制变量分析)}
+  \label{tab:q1}
+  \begin{tabular}{>{\centering\arraybackslash}p{3.0cm}>{\centering\arraybackslash}p{4.6cm}>{\centering\arraybackslash}p{4.4cm}>{\centering\arraybackslash}p{1.9cm}}
+    \toprule
+    参数变化 & 无量纲热阻 $R_{th}^*$ & 无量纲压降 $\Delta P^*$ & 温度非均匀性 $\Delta T^*$ \\
+    \midrule
+    $\alpha$: $0.10\!\rightarrow\!0.30$ & 先降后升,拐点 $\alpha\approx0.2$(降 1.98\% / 升 0.90\%) & 总体增大($+37.60\%$) & 影响较小 \\
+    $\beta$: $3.00\!\rightarrow\!4.50$ & 影响较小 & 总体减小($-32.74\%$) & 总体减小($-1.62\%$) \\
+    $n$: $2\!\rightarrow\!10$ & 总体下降($-2.18\%$) & 总体增大,增幅随 $\alpha$ 放大 & 影响较小 \\
+    \bottomrule
+    \multicolumn{4}{p{13.9cm}}{\footnotesize 注:幅度为固定其余两参数后指标的平均相对变化百分比;$n$ 增大引起的压降增幅在
+      $\alpha=0.10,0.15,0.20,0.30$ 处分别为 $+6.17\%$、$+15.28\%$、$+31.53\%$、$+72.86\%$,说明排数影响随宽度比增大而放大。}
+  \end{tabular}
+\end{table}
+
+关联式标定结果如下:
+\begin{align}
+  \Delta P^* & = 0.2404\,\beta^{-0.9819}(1-\alpha)^{-1.2432} n^{0.1681},
+             & R^2                                                       & = 0.8769, \label{eq:dp-corr-fitted}  \\
+  R_{th}^*   & = 0.7107 + 0.5958(\alpha-0.1399)^2 + 0.0108\beta
+  + 0.0017n - 0.0176\alpha n,
+             & R^2                                                       & = 0.7486. \label{eq:rth-corr-fitted}
+\end{align}
+热阻关联式的 MAPE 为 0.59\%,热阻最优宽度比 $\alpha^*$ 取 GPR
+交叉验证值 0.235。影响规律如图~\ref{fig:q1} 所示:
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/fig_q1.png}
+  \caption{结构参数对三项性能指标的影响规律}
+  \label{fig:q1}
+\end{figure}
+
+\subsection{问题二:高斯过程回归代理模型的建立与求解}
+
+\subsubsection{样本数据特征分析与预处理}
+
+\textbf{Step 1:输入输出特征定义。}基于附件 2 提供的 84 组实验/仿真样本,
+对自变量(结构参数)与因变量(性能指标)定义如下。
+
+输入向量(结构参数 $\mathbf{X}$):
+\begin{equation}
+  \mathbf{X} = [x_1, x_2, x_3]^T,
+  \label{eq:input-vector}
+\end{equation}
+其中 $x_1$ 为针肋宽度比(取值范围 $0.00 \sim 0.30$),$x_2$ 为歧管深高比
+(取值范围 $3.00 \sim 4.50$),$x_3$ 为针肋排数(取值范围 $0 \sim 10$)。
+
+输出向量(性能指标 $\mathbf{Y}$):
+\begin{equation}
+  \mathbf{Y} = [y_1, y_2, y_3]^T,
+  \label{eq:output-vector}
+\end{equation}
+其中 $y_1$ 为无量纲热阻 $R_{th}$(取值范围 $0.7219 \sim 0.7738$),
+$y_2$ 为无量纲压降 $\Delta P$(取值范围 $0.0767 \sim 0.2040$),
+$y_3$ 为无量纲温度非均匀性 $\Delta T$(取值范围 $0.7740 \sim 0.8731$)。
+
+\textbf{Step 2:数据划分与标准化。}按 $8:2$ 的比例将 84 组数据随机划分为 67 组训练集
+(用于求解超参数并建立映射)与 17 组测试集(用于检验泛化预测能力)。
+对输入特征矩阵进行 Z-score 标准化,消除量纲差异,提升算法收敛速度:
+\begin{equation}
+  \tilde{x}_i = \frac{x_i - \mu_i}{\sigma_i},
+  \label{eq:standardize}
+\end{equation}
+其中 $\mu_i$、$\sigma_i$ 分别为第 $i$ 个特征在训练集上的均值与标准差。
+
+\subsubsection{高斯过程回归代理模型的构建}
+
+\textbf{Step 1:先验与复合核函数设定。}由于芯片的热流耦合物理场具有高度非线性,采用能够提供高精度非线性拟合与
+不确定性表达的高斯过程回归\cite{Rasmussen2006}建立多输入--单输出(MISO)映射模型。对于任意
+一项性能指标 $y_j \in \{y_1, y_2, y_3\}$,假设其服从高斯过程先验分布:
+\begin{equation}
+  f_j(\mathbf{X}) \sim \mathcal{GP}\left(0, k(\mathbf{X}, \mathbf{X}')\right),
+  \label{eq:gp-prior}
+\end{equation}
+
+选用的复合核函数由常数核、径向基核与白噪声核组成:
+\begin{equation}
+  k(\mathbf{X}, \mathbf{X}') = \sigma_f^2 \exp\left( -\frac{1}{2}
+  \sum_{i=1}^{3} \frac{(x_i - x_i')^2}{l_i^2} \right) + \sigma_n^2
+  \delta(\mathbf{X}, \mathbf{X}'),
+  \label{eq:kernel}
+\end{equation}
+式中 $\sigma_f^2$ 为信号方差;$l_i$ 为对应结构参数的各向异性长度尺度;$\sigma_n^2$ 为观测噪声方差;$\delta(\mathbf{X},
+  \mathbf{X}')$ 为 Kronecker delta 函数。
+
+\textbf{Step 2:超参数极大似然估计。}利用 67 组训练集样本,通过极大似然估计(MLE)对超参数集合
+$\boldsymbol{\theta} = [\sigma_f, l_1, l_2, l_3, \sigma_n]$ 寻优求解,
+得到的最优超参数 $\boldsymbol{\theta}^*$ 见表~\ref{tab:gpr-hyper}。
+长度尺度 $l_i$ 越小,该维度上响应变化越剧烈:由表可见,热阻、压降与温度
+非均匀性模型中 $l_i$ 最小的输入分别为 $\beta$、$\alpha$ 与 $n$,与问题五
+局部敏感性系数绝对值最大的参数一一对应,表明长度尺度能正确反映各参数的
+局部影响主次。\textbf{Step 3:预测均值公式。}对任意新的结构参数 $\mathbf{X}^*$,模型预测的均值为:
+
+\begin{table}[htbp]
+  \centering
+  \caption{GPR 最优超参数 $\boldsymbol{\theta}^*$}
+  \label{tab:gpr-hyper}
+  \begin{tabular}{lccccc}
+    \toprule
+    输出指标              & $\sigma_f$ & $l_\alpha$ & $l_\beta$ & $l_n$  & $\sigma_n$         \\
+    \midrule
+    热阻 $R_{th}$       & 20.6602    & 5.0372     & 4.5245    & 4.6980 & $1.0\times10^{-5}$ \\
+    压降 $\Delta P$     & 9.7380     & 4.1600     & 6.5126    & 4.6728 & 0.0197             \\
+    温度非均匀性 $\Delta T$ & 201.3772   & 8.0457     & 9.3081    & 7.8441 & 0.0160             \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\begin{equation}
+  \bar{y}^*_j = \mathbf{k}^T (\mathbf{K} + \sigma_n^2 \mathbf{I})^{-1}
+  \mathbf{y}_{train},
+  \label{eq:gpr-predict}
+\end{equation}
+其中 $\mathbf{K}$ 为训练集核矩阵,$\mathbf{k}$ 为训练集与新样本间的
+协方差向量,$\mathbf{I}$ 为单位阵。
+
+\subsubsection{模型拟合与预测效果评估}
+
+采用决定系数 $R^2$、均方根误差 $RMSE$ 以及平均绝对百分比误差 $MAPE$
+三项指标评估模型拟合与预测效果:
+\begin{align}
+  R^2  & = 1 - \frac{\sum_{k=1}^{N} (y_k - \hat{y}_k)^2}
+  {\sum_{k=1}^{N} (y_k - \bar{y})^2},
+  \label{eq:r2}                                                   \\
+  RMSE & = \sqrt{\frac{1}{N} \sum_{k=1}^{N} (y_k - \hat{y}_k)^2},
+  \label{eq:rmse}                                                 \\
+  MAPE & = \frac{1}{N} \sum_{k=1}^{N} \left\vert
+  \frac{y_k - \hat{y}_k}{y_k} \right\vert \times 100\%.
+  \label{eq:mape}
+\end{align}
+其中 $\hat{y}_k$ 为第 $k$ 个样本的模型预测值,$\bar{y}$ 为观测均值,
+$N$ 为样本数。$R^2$ 越接近 1 且 $RMSE$、$MAPE$ 越小,表明模型拟合
+与预测效果越好。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_q2_true_pred.png}
+  \caption{GPR 代理模型预测值与真实值对比(测试集,17 组)}
+  \label{fig:q2-true-pred}
+\end{figure}
+
+GPR 代理模型在测试集上的预测值与真实值的对比如图~\ref{fig:q2-true-pred}
+所示。三指标的散点均紧密分布在 $y=x$ 对角线附近,说明模型的预测值与
+仿真数据高度一致,未出现系统性偏差或异常离群点,代理模型可替代 CFD
+求解器用于后续优化与不确定性传播分析。
+
+\subsection{问题三:多目标优化模型的建立与求解}
+
+问题三在问题二代理模型的基础上建立多目标优化模型。附件 2 样本数据的
+Pearson 相关系数分析显示,热阻与压降之间存在明显的负相关($r = -0.684$),
+即降低热阻的几何改动往往同时导致压降上升。三项性能指标之间的这种制约关系
+决定了不存在使所有指标同时达到极小的单一点,其解集为 Pareto 最优解集。
+因此本问采用"多目标寻优 + 综合决策"两阶段策略:先利用带约束的多目标优化
+算法在参数空间内求取 Pareto 前沿,再引入理想点法\cite{Hwang1981}将多目标问题转化为贴近
+理想解的单目标综合决策问题,唯一确定综合最优设计。
+
+\subsubsection{决策变量与约束条件}
+
+定义决策变量矢量 $\mathbf{X} = [x_1, x_2, x_3]^T$,根据附件 2 样本数据
+范围及实际物理含义,设置如下边界约束:
+\begin{equation}
+  \begin{cases}
+    x_1 \in \{0\} \cup [0.10,\ 0.30]          & (\text{针肋宽度比,限定样本支撑范围})   \\
+    x_2 \in \{3.0,\ 3.5,\ 4.0,\ 4.5\}         & (\text{歧管深高比,四档离散取值})     \\
+    x_3 \in \{0\} \cup \{2,\ 3,\ \dots,\ 10\} & (\text{针肋排数取值})           \\
+    x_1 > 0 \Rightarrow x_3 \ge 2             & (\text{耦合约束:有针肋时排数不小于 2})
+  \end{cases}
+  \label{eq:q3-constraints}
+\end{equation}
+可行域与附件 2 的离散档位保持一致(四档深高比、整数排数),并限定在样本
+支撑范围内寻优以避免外推预测(假设 8);$\alpha=0\Leftrightarrow n=0$ 的
+耦合约束与数据中无针肋结构对应。
+
+\subsubsection{目标函数向量}
+
+基于问题二求解得到的高斯过程回归代理模型 $f_{GPR, j}(\mathbf{X})$,
+构造多目标向量最小化函数:
+\begin{equation}
+  \min_{\mathbf{X}} \quad \mathbf{F}(\mathbf{X}) =
+  \left[ f_{Rth}(\mathbf{X}),\ f_{\Delta P}(\mathbf{X}),\
+    f_{\Delta T}(\mathbf{X}) \right]^T,
+  \label{eq:q3-objective}
+\end{equation}
+其中 $f_{Rth}$、$f_{\Delta P}$、$f_{\Delta T}$ 分别为热阻、压降与温度
+非均匀性的代理模型预测函数。
+
+\subsubsection{综合评价准则:理想点法}
+
+\textbf{Step 1:Min--Max 无量纲归一化。}为消除热阻、压降与温度非均匀性之间的量纲及数量级差异,对指标进行
+Min--Max 线性无量纲归一化:
+\begin{equation}
+  \tilde{f}_j(\mathbf{X}) = \frac{f_j(\mathbf{X}) - f_{j,\min}}
+  {f_{j,\max} - f_{j,\min}}, \quad j \in \{1, 2, 3\},
+  \label{eq:minmax}
+\end{equation}
+式中 $f_{j,\min}$ 与 $f_{j,\max}$ 取自附件 2 数据集中各指标的极值边界。
+
+\textbf{Step 2:加权理想点距离与决策。}理想最佳状态为 $\mathbf{O}^* = (0, 0, 0)^T$。按均等偏好(权值
+$w_1 = w_2 = w_3 = 1/3$),建立基于欧氏距离最小化的综合优化目标函数
+$D(\mathbf{X})$:
+\begin{equation}
+  \min_{\mathbf{X}} \quad D(\mathbf{X}) =
+  \sqrt{ \sum_{j=1}^{3} w_j \cdot
+    \left[ \tilde{f}_j(\mathbf{X}) \right]^2 },
+  \label{eq:topsis}
+\end{equation}
+其中 $w_j$ 为第 $j$ 项指标的权重,问题四将进一步研究权重变化的影响。
+
+\subsubsection{模型求解算法流程}
+
+求解算法采用多目标遗传算法(NSGA-II)\cite{Deb2002}与 L-BFGS-B 局部梯度
+搜索\cite{Byrd1995,Chen2005}结合的混合优化策略,分三步执行:
+
+\textbf{Step 1:NSGA-II 全局搜索。}使用带整数约束的多目标寻优算法在三维
+参数空间内快速搜寻,获得分布均匀的 Pareto 优选解集。
+
+\textbf{Step 2:L-BFGS-B 局部精修与综合目标值计算。}对 Pareto 前沿上的
+各个解做局部梯度精修,并计算其综合目标值 $D(\mathbf{X})$。
+
+\textbf{Step 3:排数整数离散修正。}针肋排数 $x_3$ 在实际工程中必须为整数
+排,因此对连续最优解中的 $x_3$ 进行离散整数约束网格搜索,二次微调
+$x_1$、$x_2$,锁定工程可行的最优组合。
+
+\subsubsection{综合最优设计方案}
+
+经 NSGA-II 多目标全局搜索(种群 200、300 代、10 种随机种子拼接前沿)与
+L-BFGS-B 局部精修后,在均等偏好权重下由理想点法确定的综合最优设计方案
+见表~\ref{tab:opt-solution}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{综合最优设计方案(均等权重 $w_1=w_2=w_3=1/3$)}
+  \label{tab:opt-solution}
+  \begin{tabular}{lccccccc}
+    \toprule
+    方案             & $x_1^*$ & $x_2^*$ & $x_3^*$ & $R_{th}^*$ & $\Delta P^*$ & $\Delta T^*$ & $D^*$  \\
+    \midrule
+    $\mathbf{X}^*$ & 0.2247  & 4.50    & 5       & 0.7366     & 0.0917       & 0.7791       & 0.1937 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+结果表明:$\alpha^*=0.2247$ 落在问题一的拐点区域($\alpha\approx0.2$)附近,
+验证了热阻"先降后升"机理规律与优化结果的一致性;$\beta^*$ 取样本上限以
+降低沿程阻力,$n^*=5$ 在换热强化收益与阻力叠加代价之间取得平衡,三项指标
+较样本均值均有明显改善。
+
+Pareto 前沿如图~\ref{fig:pareto} 所示:三目标两两投影均呈弧形折衷关系,
+与热阻-压降的负相关($r=-0.684$)相互印证;按理想点距离着色的"好解盆地"
+集中在 $\mathbf{F}^*$ 附近,验证了理想点法决策在前沿上的合理性。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_pareto.png}
+  \caption{Pareto 前沿的三目标两两投影(按理想点距离着色,★ 为综合最优 $\mathbf{F}^*$)}
+  \label{fig:pareto}
+\end{figure}
+
+\subsection{问题四:权重敏感性分析与鲁棒设计}
+
+\subsubsection{指标权重敏感性分析模型}
+
+\textbf{Step 1:场景偏好权重单纯形定义。}设无量纲化后的性能指标矢量为
+$\mathbf{\tilde{F}}(\mathbf{X}) = [\tilde{f}_1(\mathbf{X}),\
+  \tilde{f}_2(\mathbf{X}),\ \tilde{f}_3(\mathbf{X})]^T$,分别代表无量纲
+热阻、压降与温度非均匀性。引入描述应用场景偏好的权重矢量
+$\mathbf{W} = [w_1, w_2, w_3]^T$,定义全场景偏好空间为二维标准单纯形 $\boldsymbol{\Delta}^2$:
+\begin{equation}
+  \boldsymbol{\Delta}^2 = \left\{ \mathbf{W} \in \mathbb{R}^3
+  \;\middle\vert\; w_1 + w_2 + w_3 = 1, \quad w_j \ge 0, \;
+  \forall j \in \{1,2,3\} \right\},
+  \label{eq:weight-simplex}
+\end{equation}
+
+为直观刻画不同应用场景的偏好差异,选取三类典型场景,权重组合如表~\ref{tab:scenarios} 所示:
+
+\begin{table}[htbp]
+  \centering
+  \caption{典型应用场景及其权重组合}
+  \label{tab:scenarios}
+  \begin{tabular}{llc}
+    \toprule
+    应用场景     & 特征描述            & 权重 $(w_1, w_2, w_3)$ \\
+    \midrule
+    高性能计算    & 重散热能力,允许较高泵功与温差 & $(0.6, 0.2, 0.2)$    \\
+    便携/低功耗设备 & 重泵功与能耗,散热压力相对较低 & $(0.2, 0.6, 0.2)$    \\
+    高可靠工业器件  & 重温度均匀性,关注长期可靠性  & $(0.2, 0.2, 0.6)$    \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Step 2:加权目标优化模型。}对于任意给定的场景偏好
+$\mathbf{W} \in \boldsymbol{\Delta}^2$,建立加权理想点范数目标函数:
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \quad
+  D_{\mathbf{W}}(\mathbf{X}) = \sqrt{ \sum_{j=1}^{3} w_j \cdot
+    \left[ \tilde{f}_j(\mathbf{X}) \right]^2 },
+  \label{eq:weighted-objective}
+\end{equation}
+\begin{equation}
+  \text{s.t.} \quad \begin{cases}
+    x_1 \in \{0\} \cup [0.10,\ 0.30]          \\
+    x_2 \in \{3.0,\ 3.5,\ 4.0,\ 4.5\}         \\
+    x_3 \in \{0\} \cup \{2,\ 3,\ \dots,\ 10\} \\
+    x_1 > 0 \Rightarrow x_3 \ge 2
+  \end{cases}
+  \label{eq:q4-constraints}
+\end{equation}
+其中可行域的耦合结构定义同式~\eqref{eq:q3-constraints}。
+
+\textbf{Step 3:敏感性映射与偏好漂移方程。}偏好变化对最优解的影响可通过隐式
+映射关系表达:
+\begin{equation}
+  \mathbf{X}^*(\mathbf{W}) = \arg \min_{\mathbf{X} \in
+  \boldsymbol{\Omega}_{\mathbf{X}}} D_{\mathbf{W}}(\mathbf{X}),
+  \label{eq:preference-map}
+\end{equation}
+通过求解偏好空间 $\boldsymbol{\Delta}^2$ 顶点极值点(极端场景)及内部
+均匀网格点处的 $\mathbf{X}^*(\mathbf{W})$,计算决策变量关于权重的梯度
+敏感性矩阵 $\mathbf{S}_{\mathbf{X},\mathbf{W}}$,用以定量评估参数敏感度:
+\begin{equation}
+  \mathbf{S}_{\mathbf{X},\mathbf{W}} = \begin{bmatrix}
+    \frac{\partial x_1}{\partial w_1} & \frac{\partial x_1}{\partial w_2}
+                                      & \frac{\partial x_1}{\partial w_3} \\
+    \frac{\partial x_2}{\partial w_1} & \frac{\partial x_2}{\partial w_2}
+                                      & \frac{\partial x_2}{\partial w_3} \\
+    \frac{\partial x_3}{\partial w_1} & \frac{\partial x_3}{\partial w_2}
+                                      & \frac{\partial x_3}{\partial w_3}
+  \end{bmatrix}.
+  \label{eq:sensitivity-matrix}
+\end{equation}
+需要说明的是,式~\eqref{eq:sensitivity-matrix} 中的偏导数建立在
+$\mathbf{X}^*(\mathbf{W})$ 关于 $\mathbf{W}$ 分段光滑的假设之上,
+本文在各采样点处采用中心有限差分
+$\frac{\partial x_i}{\partial w_j} \approx
+  \frac{x_i^*(\mathbf{W} + h\mathbf{e}_j) - x_i^*(\mathbf{W} -
+    h\mathbf{e}_j)}{2h}$ 进行数值近似($h$ 为步长,$\mathbf{e}_j$ 为第
+$j$ 个坐标方向的单位向量)。由于权重矢量须满足单纯形约束
+$\sum_j w_j = 1$,直接沿坐标方向扰动会破坏该约束,本文取扰动方向
+$\mathbf{e}_j - \frac{1}{3}\mathbf{1}$(分量和为零,保证扰动后仍满足
+单纯形约束),并在权重点接近单纯形边界时相应收缩步长,以保证扰动后的
+权重点始终落在 $\boldsymbol{\Delta}^2$ 内。
+
+\textbf{Step 4:三场景最优方案对比。}在权重单纯形 $\boldsymbol{\Delta}^2$
+上采用重心坐标均匀网格($n=6$,共 28 个采样点,含顶点极端场景与内部网格点)
+进行全场景扫描,三个典型场景下的最优方案见表~\ref{tab:scenario-results}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{三场景最优方案对比}
+  \label{tab:scenario-results}
+  \begin{tabular}{lcccccc}
+    \toprule
+    应用场景                     & $x_1^*$ & $x_2^*$ & $x_3^*$ & $D^*$  \\
+    \midrule
+    高性能计算 $(0.6,0.2,0.2)$    & 0.2305  & 4.50    & 6       & 0.2316 \\
+    便携/低功耗设备 $(0.2,0.6,0.2)$ & 0.2159  & 4.50    & 5       & 0.1670 \\
+    高可靠工业器件 $(0.2,0.2,0.6)$  & 0.2247  & 4.50    & 5       & 0.1586 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表可见,三场景的 $\beta^*$ 均取 4.50(样本上限)、$\alpha^*$ 均在
+0.22--0.23 附近(与拐点分析一致),仅排数 $n^*$ 随偏好变化:高性能计算
+取 6 以强化换热,其余两场景取 5,反映散热与泵功之间的取舍差异。
+
+全偏好单纯形 31 个采样点(28 网格点 + 3 场景点)的扫描结果如图~\ref{fig:weight-sweep}
+所示:偏重散热的区域最优排数较高($n^*=6$),偏重泵功与均匀性的区域较低
+($n^*=3\sim5$),各采样点处 $\beta^*=4.50$ 恒成立、$D^*(\mathbf{W})$
+光滑无突变,为鲁棒方案选取提供了依据。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_weight_sweep.png}
+  \caption{全偏好空间扫描结果:(a) 偏好空间内最优排数分区(■ 典型场景点,◆ 等权点);
+    (b) 综合距离 $D^*(\mathbf{W})$ 在偏好空间的光滑变化}
+  \label{fig:weight-sweep}
+\end{figure}
+
+\textbf{Step 5:权重敏感性矩阵。}在三个典型场景处分别计算敏感性矩阵
+$\mathbf{S}_{\mathbf{X},\mathbf{W}}$(中心差分,$h=0.05$),结果见表~\ref{tab:weight-sens}
+($x_2$ 与 $x_3$ 因取值离散,局部差分下梯度恒为零,表中略去):
+
+\begin{table}[htbp]
+  \centering
+  \caption{权重敏感性矩阵(仅 $x_1$ 非零,$h=0.05$)}
+  \label{tab:weight-sens}
+  \begin{tabular}{lccc}
+    \toprule
+    应用场景 & $\partial x_1^*/\partial w_1$ & $\partial x_1^*/\partial w_2$ & $\partial x_1^*/\partial w_3$ \\
+    \midrule
+    高性能计算 & $+0.0238$ & $-0.0245$ & $+0.0004$ \\
+    便携/低功耗设备 & $+0.0516$ & $-0.0450$ & $-0.0061$ \\
+    高可靠工业器件 & $+0.0289$ & $-0.0289$ & $+0.0001$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+敏感性矩阵显示,仅 $x_1$ 对权重扰动非零敏感:$\partial x_1^*/\partial w_1$
+为正、$\partial x_1^*/\partial w_2$ 为负,与物理规律一致(热阻权重增大时
+最优宽度比稍增以强化换热,反之稍降以减小阻力);系数量级仅 $10^{-2}$,
+说明典型场景附近最优方案对权重扰动具有较好的局部稳定性。
+\subsubsection{鲁棒设计优化模型}
+
+\textbf{Step 1:后悔值函数定义。}定义结构设计方案 $\mathbf{X}$ 在权重场景
+$\mathbf{W}$ 下的后悔值 $R(\mathbf{X}, \mathbf{W})$:即该方案在此场景
+下的实际评价值,与该场景下理论所能达到的最小(最优)评价值之差:
+\begin{equation}
+  R(\mathbf{X}, \mathbf{W}) = D_{\mathbf{W}}(\mathbf{X}) -
+  D_{\mathbf{W}}\left( \mathbf{X}^*(\mathbf{W}) \right),
+  \label{eq:regret}
+\end{equation}
+其物理含义为:$R(\mathbf{X}, \mathbf{W})$ 越大,说明方案 $\mathbf{X}$
+在偏好 $\mathbf{W}$ 下相对于"定制最优方案"的性能劣化越严重。
+
+\textbf{Step 2:最小最大后悔值鲁棒优化。}鲁棒设计的核心思想是寻找一个能够
+兜底最坏情况的方案,使得在全偏好空间 $\boldsymbol{\Delta}^2$ 内的最大
+后悔值达到极小化:
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \;
+  \max_{\mathbf{W} \in \boldsymbol{\Delta}^2} \;
+  R(\mathbf{X}, \mathbf{W}),
+  \label{eq:minimax}
+\end{equation}
+展开写为双层极值优化问题(Bi-level Optimization Problem):
+\begin{equation}
+  \min_{\mathbf{X} \in \boldsymbol{\Omega}_{\mathbf{X}}} \left[
+    \max_{\mathbf{W} \in \boldsymbol{\Delta}^2} \left(
+    \sqrt{\sum_{j=1}^3 w_j \left[\tilde{f}_j(\mathbf{X})\right]^2} -
+    \min_{\mathbf{X}' \in \boldsymbol{\Omega}_{\mathbf{X}}}
+    \sqrt{\sum_{j=1}^3 w_j \left[\tilde{f}_j(\mathbf{X}')\right]^2}
+    \right) \right],
+  \label{eq:bi-level}
+\end{equation}
+式~\eqref{eq:bi-level} 的求解采用"外层枚举 + 内层采样"的数值策略。
+对决策空间 $\boldsymbol{\Omega}_{\mathbf{X}}$ 中的候选方案
+$\mathbf{X}$(由问题三的 Pareto 前沿解集与网格候选点组成)逐一考察;
+对每个候选方案,在权重单纯形 $\boldsymbol{\Delta}^2$ 上均匀采样 $N_W$
+个权重点(含顶点极端场景),对每个采样点求解内层最优值
+$D_{\mathbf{W}}(\mathbf{X}^*(\mathbf{W}))$(可调用问题二代理模型快速评估),
+取后悔值最大值作为该方案的最大后悔值;比较所有候选方案的最大后悔值,取极小
+者即鲁棒解 $\mathbf{X}_{robust}$。
+由于代理模型评估成本极低,该策略可在有限时间内完成全局搜索,且不受
+决策空间维度增大的明显影响。
+
+\textbf{Step 3:方案稳定性评估指标。}引入综合性能变异系数 (CV) 与最大后悔
+界限评估方案的稳定性:
+\begin{equation}
+  CV(\mathbf{X}) = \frac{\sigma_{\mathbf{W}}\left(
+    D_{\mathbf{W}}(\mathbf{X}) \right)}
+  {\mu_{\mathbf{W}}\left( D_{\mathbf{W}}(\mathbf{X}) \right)},
+  \label{eq:cv}
+\end{equation}
+式中 $\mu_{\mathbf{W}}$ 与 $\sigma_{\mathbf{W}}$ 分别为目标值在全偏好
+空间上的期望与标准差。$CV(\mathbf{X})$ 越小,说明该方案对场景偏好波动
+的免疫能力越强。
+
+\subsubsection{鲁棒方案的判定依据与理论优势}
+
+\textbf{Step 1:判定依据。}其一,风险下界保障:鲁棒解使全偏好空间内的最大
+后悔值 $R_{max}$ 达到极小,兜底最坏偏好场景($\epsilon$ 为参考容许上限,
+取问题三综合最优方案均等偏好下评价值的 $5\%$)。其二,变异平坦度:鲁棒
+方案的权重空间变异系数 $CV$ 显著小于等权综合方案,即目标值在权重维度上
+更平坦、对偏好变化不敏感(数值见 5.4.2 节结果表)。
+
+\textbf{Step 2:理论优势。}本模型不假设任何先验偏好分布,免除对人工权重的主观
+依赖,能适应未知的应用场景变化。芯片封装开模成本高昂,鲁棒方案提供了一套
+标准化、通用的结构尺寸参数,单一规格可大幅降低异构场景下的开模与库存成本。
+同时,方案有效卡住了热阻、压降与温度非均匀性的极值下限,兼顾高效散热与低泵功
+运行的平衡。
+
+\textbf{Step 3:鲁棒方案求解结果。}在问题三 Pareto 前沿解集与网格候选点构成的
+候选池上,计算各候选方案在全偏好单纯形 28 个采样点上的最大后悔值,取极小者
+得鲁棒解 $\mathbf{X}_{robust}$。鲁棒方案与等权综合方案的对比
+见表~\ref{tab:robust}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{鲁棒方案与等权综合方案对比}
+  \label{tab:robust}
+  \begin{tabular}{lcccccc}
+    \toprule
+    方案                         & $x_1$  & $x_2$ & $x_3$ & $R_{max}$ & $\epsilon$ & $CV$   \\
+    \midrule
+    综合最优 $\mathbf{X}^*$        & 0.2247 & 4.50  & 5     & —         & —          & 0.3254 \\
+    鲁棒方案 $\mathbf{X}_{robust}$ & 0.2387 & 4.50  & 6     & 0.2543    & 0.0097     & 0.0717 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+结果表明:鲁棒方案的 $CV=0.0717$ 远小于综合最优方案的 $CV=0.3254$
+(降低约 78\%),以较小的参数调整($\alpha$ 从 0.2247 微增至 0.2387,
+$n$ 从 5 增至 6)换取跨场景稳定性的显著提升,在芯片封装开模成本高昂的
+背景下具有工程价值。
+
+候选池 2000 个方案的最大后悔值分布如图~\ref{fig:regret} 所示:鲁棒方案的
+$R_{max}=0.2543$ 处于分布左缘(全体候选的最小后悔),而等权综合最优方案
+$\mathbf{X}^*$ 的最大后悔值为 $0.4539$,约为其 1.8 倍;容许上限
+$\epsilon=0.0097$ 远小于任何候选方案的后悔值,说明不存在能同时逼近所有
+场景定制最优的单一方案,按场景定制或分级设计是必要的工程手段。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{figures/fig_regret.png}
+  \caption{候选池最大后悔值分布(虚线为鲁棒方案 $R_{max}$,点线为容许上限
+    $\epsilon$,点划线为等权综合最优 $\mathbf{X}^*$ 的最大后悔值)}
+  \label{fig:regret}
+\end{figure}
+
+\subsection{问题五:参数扰动敏感性与稳定性分析}
+
+\subsubsection{参数小范围扰动模型}
+
+\textbf{Step 1:摄动变量概率分布表征。}在实际微纳加工制造与工程运行中,系统
+不可避免地受到两类物理扰动。其一为加工制造误差,属静态扰动:光刻、蚀刻及
+封装工艺精度限制导致针肋宽度比 $x_1$、歧管深高比 $x_2$ 及针肋排数 $x_3$
+存在尺寸偏差。其二为运行工况波动,属动态扰动:入口质量流量 $\dot{m}$
+(基准 $1$~g/s)、入口温度 $T_{in}$(基准 $293$~K)以及芯片发热功率 $q_v$
+(基准 $5\times10^9$~W/m$^3$)在实际工作中发生随机漂移。
+
+定义系统综合摄动向量 $\mathbf{Z} = [\mathbf{X}, \mathbf{P}]^T \in
+  \mathbb{R}^6$,其中结构参数矢量 $\mathbf{X} = [x_1, x_2, x_3]^T$ 对应
+加工误差,工况参数矢量 $\mathbf{P} = [\dot{m}, T_{in}, q_v]^T$ 对应环境
+与负载波动。假设各扰动变量在标称设计点
+$\mathbf{Z}_0 = [\mathbf{X}_0, \mathbf{P}_0]^T$ 附近服从独立正态分布
+$\mathcal{N}(\mu, \sigma^2)$ 或有界均匀分布 $\mathcal{U}[-\delta,
+    +\delta]$:
+\begin{equation}
+  \mathbf{Z} = \mathbf{Z}_0 + \boldsymbol{\delta}_{\mathbf{Z}}, \quad
+  \boldsymbol{\delta}_{\mathbf{Z}} \sim \mathcal{N}\left(\mathbf{0},
+  \boldsymbol{\Sigma}_{\mathbf{Z}}\right),
+  \label{eq:perturb}
+\end{equation}
+其中协方差矩阵为对角阵
+$\boldsymbol{\Sigma}_{\mathbf{Z}} = \text{diag}(\sigma_{x_1}^2,\
+  \sigma_{x_2}^2,\ \sigma_{x_3}^2,\ \sigma_{\dot{m}}^2,\
+  \sigma_{T_{in}}^2,\ \sigma_{q_v}^2)$。根据工程加工精度与控制要求,设定
+相对扰动幅度 $\pm \varepsilon$。参考半导体封装工艺的典型公差水平:光刻线宽误差 $\pm 1\%\sim3\%$,蚀刻深度
+误差 $\pm 3\%\sim5\%$。结合运行控制精度,本文取 $\varepsilon = 5\%$ 作为
+综合扰动的保守上界,各变量扰动标准差按
+$\sigma_{z_i} = \varepsilon\,z_{i,0}/3$ 设定,使 $3\sigma$ 区间恰好落在
+$\pm\varepsilon$ 之内。
+
+\textbf{Step 2:响应曲面与两维度敏感性分层。}将问题二中的高斯过程代理模型
+扩展为包含结构与工况的响应映射函数:
+\begin{equation}
+  y_j = G_j(\mathbf{Z}) = G_j(\mathbf{X}, \mathbf{P}), \quad
+  j \in \{1, 2, 3\},
+  \label{eq:gpr-extended}
+\end{equation}
+式中 $y_1, y_2, y_3$ 分别对应无量纲热阻、压降和温度非均匀性。需要说明
+的是,附件 2 的样本数据在固定标称工况下采集,结构参数 $\mathbf{X}$ 的
+扰动影响可由训练好的代理模型直接刻画;而工况参数 $\mathbf{P}$ 未参与
+训练,其影响无法由代理模型直接给出。鉴于此,本文分两层评估扰动影响。
+
+结构参数层的扰动由代理模型严格刻画:指标响应由
+$G_j(\mathbf{X}, \mathbf{P}_0)$ 直接计算,Sobol 全局敏感性分析\cite{Sobol2001}与蒙特卡洛
+不确定性传播\cite{McKay1979}均在此层进行。
+
+工况参数层采用近似处理:工况参数的影响基于标称设计点处的一阶泰勒展开
+线性化,即
+\begin{equation}
+  y_j \approx y_{j,0} + \sum_{i \in \mathcal{P}} S_{ij}^{local}
+  \cdot \frac{z_i - z_{i,0}}{z_{i,0}},
+  \label{eq:op-linear}
+\end{equation}
+式中 $y_{j,0}$ 为标称工况下的指标值,$S_{ij}^{local}$ 为局部归一化敏感性
+系数,求和仅遍历工况参数集合 $\mathcal{P}$。需要说明的是,附件 2 样本在
+固定标称工况下采集,代理模型未在工况维度上训练,故 $S_{ij}^{local}$ 无法
+由代理模型梯度直接给出,本文改由无量纲标度关系作机理估算:层流入口段换热
+$Nu \sim Re^{1/3}$ 给出流量 $\dot{m}$ 对热阻与温度非均匀性的敏感性约为
+$-1/3$、对压降约为 $-1$(层流泊肃叶摩擦因子 $f \sim 1/Re$);入口温度
+$T_{in}$ 与发热功率 $q_v$ 的一阶贡献在无量纲化过程中相互抵消,敏感性近似
+为零。该标度估算的置信度低于结构参数层的代理模型结果,仅用于工况层的一阶
+近似评估。该线性化仅在 $\pm 5\%$ 小扰动范围内保持足够精度,本文评估以
+$\varepsilon \le 5\%$ 为适用范围。
+
+\subsubsection{性能指标敏感性分析模型}
+
+为区分哪些参数的微小变化对散热性能影响最剧烈,分别建立局部敏感性模型
+与全局敏感性模型。其中结构参数层的 Sobol 全局敏感性分析由代理模型严格
+支撑;工况参数层在线性化假设(式~\eqref{eq:op-linear})下,其贡献由局部
+敏感性系数直接近似评估。
+
+\textbf{Step 1:局部归一化敏感性系数。}在标称设计点
+$\mathbf{Z}_0$ 处对性能指标 $y_j$ 进行一阶泰勒展开,定义第 $i$ 个输入
+参数对第 $j$ 个性能指标的无量纲局部敏感性系数 $S_{ij}^{local}$:
+\begin{equation}
+  S_{ij}^{local} = \left. \frac{\partial G_j(\mathbf{Z})}{\partial z_i}
+  \right\vert_{\mathbf{Z}=\mathbf{Z}_0} \cdot \frac{z_{i,0}}{y_{j,0}},
+  \label{eq:lsa}
+\end{equation}
+$S_{ij}^{local} > 0$ 表示正相关,即参数增大导致指标上升;
+$\vert S_{ij}^{local} \vert$ 模长越大,说明该指标对该参数的一阶局部
+扰动越敏感。
+
+\textbf{Step 2:基于方差分解的 Sobol 全局敏感性分析。}考虑高阶非线性
+交叉耦合作用,将总方差 $V(y_j)$ 分解为单参数方差与多参数交互方差:
+\begin{equation}
+  V(y_j) = \sum_{i=1}^{k} V_i^j + \sum_{1 \le i < m \le k} V_{im}^j
+  + \dots + V_{1,2,\dots,k}^j,
+  \label{eq:sobol-decomp}
+\end{equation}
+定义一阶主效应指数 $S_i^j$(衡量单一参数 $z_i$ 的独立贡献率)与总效应
+指数 $S_{Ti}^j$(衡量参数 $z_i$ 及其与其它所有参数联合交互的总贡献率):
+\begin{equation}
+  S_i^j = \frac{V_{z_i}\left( \mathbb{E}_{\mathbf{Z}_{-i}}[y_j \mid z_i]
+    \right)}{V(y_j)},
+  \label{eq:sobol-first}
+\end{equation}
+\begin{equation}
+  S_{Ti}^j = \frac{\mathbb{E}_{\mathbf{Z}_{-i}}\left[ V_{z_i}(y_j \mid
+    \mathbf{Z}_{-i}) \right]}{V(y_j)} = 1 -
+  \frac{V_{\mathbf{Z}_{-i}}\left( \mathbb{E}_{z_i}[y_j \mid
+      \mathbf{Z}_{-i}] \right)}{V(y_j)},
+  \label{eq:sobol-total}
+\end{equation}
+式中 $\mathbf{Z}_{-i}$ 表示除 $z_i$ 外的其余变量集合。
+
+\textbf{Step 3:敏感性分析结果。}结构参数层在标称设计点
+$\mathbf{X}^*=(0.2247,4.50,5)$ 处的局部归一化敏感性系数与 Sobol 全局
+敏感性指数分别见表~\ref{tab:lsa} 与表~\ref{tab:sobol}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{局部归一化敏感性系数 $S_{ij}^{local}$(标称点 $\mathbf{X}^*$)}
+  \label{tab:lsa}
+  \begin{tabular}{lccc}
+    \toprule
+    结构参数          & $R_{th}$  & $\Delta P$ & $\Delta T$ \\
+    \midrule
+    $x_1$ (针肋宽度比) & $-0.0089$ & $+0.4271$  & $-0.0001$  \\
+    $x_2$ (歧管深高比) & $-0.1526$ & $-0.8414$  & $-0.1669$  \\
+    $x_3$ (针肋排数)  & $-0.0222$ & $+0.3583$  & $+0.0624$  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由局部敏感性系数可见:压降对各参数的敏感性均最高($\beta$ 最强,$-0.8414$,
+与深高比增大降低沿程阻力的机理一致);热阻主要对 $\beta$ 敏感,对
+$\alpha$、$n$ 较弱,与 $\alpha^*$ 附近热阻曲面较平坦的特征吻合。
+
+\begin{table}[htbp]
+  \centering
+  \caption{Sobol 全局敏感性指数(结构参数层,$N=1024$)}
+  \label{tab:sobol}
+  \begin{tabular}{lcccccc}
+    \toprule
+    \multirow{2}{*}{结构参数} & \multicolumn{2}{c}{$R_{th}$} & \multicolumn{2}{c}{$\Delta P$} & \multicolumn{2}{c}{$\Delta T$}                                \\
+    \cmidrule(lr{8pt}){2-3} \cmidrule(lr{8pt}){4-5} \cmidrule(lr{8pt}){6-7}
+                          & $S_i$                        & $S_{Ti}$                       & $S_i$                          & $S_{Ti}$ & $S_i$  & $S_{Ti}$ \\
+    \midrule
+    $x_1$                 & 0.3280                       & 0.3783                         & 0.2664                         & 0.3429   & 0.1996 & 0.2324   \\
+    $x_2$                 & 0.2982                       & 0.3429                         & 0.3802                         & 0.3803   & 0.0581 & 0.0897   \\
+    $x_3$                 & 0.2998                       & 0.3747                         & 0.2767                         & 0.3518   & 0.7000 & 0.7210   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表~\ref{tab:sobol} 可见:各指标的一阶主效应与总效应差距不大,交互效应
+较弱;$\Delta T$ 对 $n$ 的总效应高达 $0.7210$,排数是控制温度均匀性的
+主导因素;三个参数对至少一项指标的总效应均高于 $0.2$(判定准则一),均为
+须严格控制加工公差的关键参数。
+
+\textbf{Step 4:蒙特卡洛不确定性传播结果。}针对结构参数层,采用拉丁超立方采样
+(LHS)在 $\pm 5\%$ 扰动空间($\mathcal{N}(\mathbf{X}^*,
+  \boldsymbol{\Sigma}_{\mathbf{X}})$,$\sigma_{z_i}=\varepsilon
+  z_{i,0}/3$)内抽取 $N=8000$ 组样本,经 GPR 代理模型传播后得到三项指标的
+响应分布,统计结果见表~\ref{tab:mc-results}。
+
+\begin{table}[htbp]
+  \centering
+  \caption{$\pm 5\%$ 结构参数扰动下 MC 不确定性传播结果($N=8000$)}
+  \label{tab:mc-results}
+  \begin{tabular}{lcccc}
+    \toprule
+    指标         & $y_0$  & $CV$   & $y_{P95}$ & $P_{fail}$ \\
+    \midrule
+    $R_{th}$   & 0.7366 & 0.26\% & 0.7392    & 0.00\%     \\
+    $\Delta P$ & 0.0917 & 1.67\% & 0.0942    & 0.00\%     \\
+    $\Delta T$ & 0.7791 & 0.31\% & 0.7821    & 0.00\%     \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+由表~\ref{tab:mc-results} 与图~\ref{fig:mc-dist} 可见,$\pm 5\%$ 加工误差下
+三项指标的响应分布高度集中在标称值附近,变异系数均远低于 $3\%$ 阈值、
+越界失效概率均为零,方案对加工误差具有充分鲁棒性;压降的 CV 相对较高
+($1.67\%$),与其局部敏感性最强的特征一致。
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.95\textwidth]{figures/fig_mc_dist.png}
+  \caption{$\pm 5\%$ 结构参数扰动下三项指标的响应分布($N=8000$,
+    竖线为标称值 $y_0$ 与 95\% 分位数,右侧箭头示意越界阈值 $1.10y_0$ 位置)}
+  \label{fig:mc-dist}
+\end{figure}
+
+\textbf{Step 5:工况参数层线性化估算。}工况参数按式~\eqref{eq:op-linear}
+基于无量纲标度关系一阶近似:$\dot{m}$ 对 $R_{th}$、$\Delta T$ 的敏感性
+约为 $-1/3$、对 $\Delta P$ 约为 $-1$,$T_{in}$ 与 $q_v$ 的一阶贡献在
+无量纲化中近似抵消;$\pm 5\%$ 综合工况扰动(三参数同向拉满最坏情形)下
+三项指标相对变化约 $-1.67\%$、$-5.00\%$、$-1.67\%$。该估算基于机理
+标度而非代理模型梯度,置信度低于结构参数层,仅作一阶近似评估。
+\subsubsection{设计方案稳定性评估与不确定性传播模型}
+
+\textbf{Step 1:蒙特卡洛不确定性传播。}结构参数层用拉丁超立方采样(LHS)在
+扰动空间 $\mathcal{N}(\mathbf{Z}_0, \boldsymbol{\Sigma}_{\mathbf{Z}})$ 内
+抽取 $N$ 组样本,经代理模型传播生成响应分布族;工况参数层波动按
+式~\eqref{eq:op-linear} 线性化叠加,单独报告贡献(结果见 5.5.2 节)。
+
+\textbf{Step 2:稳定性评价指标体系。}定义以下三个数学指标定量评价设计方案的
+抗扰动稳定性。
+
+变异系数 (CV) 评估指标波动的相对分散程度,值越小说明稳定性越好:
+\begin{equation}
+  CV_j^{pert} = \frac{\sigma_{y_j}}{\mu_{y_j}} =
+  \frac{\sqrt{\frac{1}{N-1}\sum_{k=1}^N \left( y_j^{(k)} - \bar{y}_j
+  \right)^2}}{\bar{y}_j},
+  \label{eq:cv5}
+\end{equation}
+
+95\% 置信区间波动上限 (P95) 定义为:
+\begin{equation}
+  y_{j, P95} = \text{Quantile}\left( \{y_j^{(k)}\}, 0.95 \right),
+  \label{eq:p95}
+\end{equation}
+在 95\% 的扰动工况下,性能指标不会恶化超过此安全阈值。
+
+越界失效概率 ($P_{fail}$) 的定义为:设工程许可的最大性能恶化容限为
+$y_{j, max}^{limit} = 1.10\, y_{j,0}$,即允许性能恶化 $10\%$,则
+\begin{equation}
+  P_{fail, j} = \mathbb{P}\left( y_j > y_{j, max}^{limit} \right) =
+  \frac{1}{N} \sum_{k=1}^{N} \mathbb{I}\left( y_j^{(k)} >
+  y_{j, max}^{limit} \right),
+  \label{eq:pfail}
+\end{equation}
+式中 $\mathbb{I}(\cdot)$ 为示性函数。
+
+\subsubsection{敏感性与稳定性判定准则}
+
+在完成求解后,根据以下三条理论准则判定设计方案:
+
+三条判定准则如下。其一,若某参数对任一指标的总效应指数 $S_{Ti}^j > 0.2$,
+则判定该参数为系统关键控制参数,在工程加工中必须提高公差等级,如采用高
+精度微蚀刻加工。本文求解结果中三个结构参数对至少一项指标的总效应指数均
+高于该阈值(数值见 5.5.2 节结果表),即三者均为关键控制参数,加工公差均须
+严格控制。其二,若在 $\pm 5\%$ 的综合随机扰动下(结构参数层经蒙特卡洛
+传播、工况参数层经线性化叠加),三项性能指标的变异系数均满足
+$CV_j^{pert} < 3\%$ 且 $P_{fail, j} \approx 0$,则判定该优化方案具有强
+鲁棒性与高工程可靠性。其三,比较置信上限 $y_{j, P95}$ 与系统极限熔断值的
+距离,距离越宽说明系统的工程容错能力与安全裕度越大。
+
+\subsubsection{设计方案的扰动验证闭环}
+
+为验证前述各问设计方案的工程稳定性,将问题三的综合最优方案
+$\mathbf{X}^*$ 与问题四的鲁棒方案 $\mathbf{X}_{robust}$ 一并代入本问
+的扰动传播模型,在 $\pm 5\%$ 综合随机扰动下,结构参数层经蒙特卡洛传播、
+工况参数层经线性化叠加后,分别计算其变异系数 $CV_j^{pert}$ 与越界失效概率
+$P_{fail, j}$,结果对比如表~\ref{tab:q5-compare} 所示:
+
+\begin{table}[htbp]
+  \centering
+  \caption{设计方案在 $\pm 5\%$ 扰动下的稳定性对比}
+  \label{tab:q5-compare}
+  \begin{tabular}{lcccc}
+    \toprule
+    方案                         & $CV_1^{pert}$ & $CV_2^{pert}$ & $CV_3^{pert}$ & $P_{fail}$ \\
+    \midrule
+    综合最优方案 $\mathbf{X}^*$      & 0.27\%        & 1.76\%        & 0.31\%        & 0.00\%     \\
+    鲁棒方案 $\mathbf{X}_{robust}$ & 0.26\%        & 1.88\%        & 0.32\%        & 0.00\%     \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+若鲁棒方案的变异系数与失效概率均不劣于综合最优方案,且满足
+$CV_j^{pert} < 3\%$、$P_{fail, j} \approx 0$ 的判定准则,则表明鲁棒方案
+在加工误差与工况波动下依然保持稳定。

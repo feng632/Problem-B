@@ -1,0 +1,58 @@
+% =====================================================================
+%  AI 工具使用详情(单独提交的 PDF,不与论文合并)
+%  编译:xelatex ai-usage-details.tex(从 paper/ 目录)
+% =====================================================================
+\documentclass[zihao=-4]{ctexart}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{setspace}
+
+\setCJKmainfont[AutoFakeBold=3]{SimSun}        % 正文宋体
+\setCJKsansfont[AutoFakeBold=3]{Microsoft YaHei} % 标题雅黑
+\setCJKmonofont{SimHei}
+
+\begin{document}
+
+\begin{center}
+  {\zihao{2}\bfseries\sffamily 2026 年全国大学生数学建模竞赛} \\[4pt]
+  {\zihao{3}\bfseries\sffamily AI 工具使用详情}
+\end{center}
+
+\vspace{2em}
+
+\begin{center}
+  \begin{tabular}{ll}
+    题\qquad 号 & B(高性能芯片热管理系统优化)       \\
+    报\ 名\ 号   & 000000(填写报名号)         \\
+    学\qquad 校 & 北京科技大学                \\
+    队员姓名      & 唐晨枫\quad 宋冠廷\quad 李思语 \\
+  \end{tabular}
+\end{center}
+
+\vspace{1.5em}
+
+\noindent 本参赛队在竞赛期间使用了以下人工智能(AI)工具:
+
+\begin{center}
+  \begin{tabular}{cl>{\raggedright\arraybackslash}p{7.4cm}>{\raggedright\arraybackslash}p{3.2cm}}
+    \toprule
+    序号 & AI 工具名称             & 用途说明                                    & 使用方式                     \\
+    \midrule
+    1  & Claude(Claude Code) & 建模思路讨论与模型选择辅助:多目标优化、代理建模、鲁棒优化与敏感性分析方法选型 & 生成方法建议,经建模手与全队讨论后取舍采纳    \\
+    2  & Claude(Claude Code) & 编程实现与调试:求解脚本与画图脚本的编写、数值回填核对             & 生成代码初稿,队员逐行审查、运行验证后修改定稿  \\
+    3  & Claude(Claude Code) & 论文文本编辑与图表设计:表述压缩、图表版式设计、格式排版            & 对队员撰写的文本进行编辑润色,核心内容由队员撰写 \\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+\vspace{1.5em}
+
+\noindent 除上述工具外,本队未使用其他生成式人工智能工具。论文的全部数据
+来源于竞赛官方附件,所有数值结果均由本队编写的程序独立计算得出,并经人工
+复核确认。AI 工具生成的全部内容均经过本队成员逐一审核与修改,本队对论文
+全部内容的真实性与正确性负全部责任。
+
+\vspace{3em}
+\end{document}

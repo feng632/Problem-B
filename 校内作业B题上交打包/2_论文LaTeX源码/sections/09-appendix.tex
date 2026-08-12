@@ -1,0 +1,214 @@
+% =====================================================================
+%  09 附录 — B题项目源代码
+%  由 main.tex 的 appendices 环境包裹,放在正文最后。
+%  使用 lstinputlisting 直接读入实际源文件,保证与运行代码一致。
+% =====================================================================
+
+% ---- 全局代码显示风格(附录用,紧凑排版) ----
+\lstset{
+    language=Python,
+    basicstyle=\footnotesize\ttfamily,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=5pt,
+    breaklines=true,
+    breakatwhitespace=false,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+    frame=single,
+    framerule=0.4pt,
+    framesep=6pt,
+    rulecolor=\color{gray!40},
+    tabsize=4,
+    showstringspaces=false,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+}
+
+\section{项目源代码}
+
+以下为问题一至问题五建模所用的全部 Python 源程序,按模块依赖关系排列:
+公共模块 $\rightarrow$ 逐题求解 $\rightarrow$ 画图脚本。
+
+\subsection{\texttt{common.py} — 公共配置模块}
+
+项目级路径、matplotlib 全局样式(中文字体、DPI、网格)及统一图片保存函数。
+所有求解和画图脚本均依赖此模块。
+
+\lstinputlisting[
+    caption={common.py},
+    label={lst:common},
+    firstnumber=auto,
+]{../code/src/common.py}
+
+\newpage
+\subsection{\texttt{solve\_q1.py} — 问题一:半经验关联式标定与机理分析}
+
+\begin{enumerate}[label=(\arabic*)]
+    \item 压降幂律关联式 $\ln\Delta P^*=\ln C+a\ln\beta+b\ln(1-\alpha)+c\ln n$ 的最小二乘标定
+    \item 热阻二次结构关联式 $R_{th}^*=R_0+c_1(\alpha-\alpha^*)^2+c_2\beta+c_3 n+c_4\alpha n$ 的非线性拟合
+    \item 基于 GPR 代理模型的控制变量影响幅度定量表
+    \item $\alpha^*$ 拐点的 GPR 交叉验证(逐点扫描求 $\bar{R}_{th}^*$ 的 argmin)
+    \item 机理关联式与数据一致性定量检验(MAPE, $R^2$)
+\end{enumerate}
+
+\lstinputlisting[
+    caption={solve\_q1.py},
+    label={lst:solve_q1},
+    firstnumber=auto,
+]{../code/src/solve_q1.py}
+
+\newpage
+\subsection{\texttt{solve\_q2.py} — 问题二:GPR 代理模型构建}
+
+以 $\alpha,\beta,n$ 为输入、$R_{th}^*,\Delta P^*,\Delta T^*$ 为输出,
+采用 Constant$\times$RBF(各向异性)+White 复合核构建高斯过程回归代理模型。
+按 8:2 留出法划分训练/测试集,对每个输出维度独立训练(MISO 架构),
+并提取 MLE 最优核超参数 $\theta^*=[\sigma_f,l_1,l_2,l_3,\sigma_n]$。
+训练完成的模型保存为 \texttt{gpr.pkl},供后续问题三--五复用。
+
+\lstinputlisting[
+    caption={solve\_q2.py},
+    label={lst:solve_q2},
+    firstnumber=auto,
+]{../code/src/solve_q2.py}
+
+\newpage
+\subsection{\texttt{solve\_q3.py} — 问题三:混合多目标优化与决策}
+
+三段式混合策略:
+\begin{enumerate}[label=(\arabic*)]
+    \item 混合变量 NSGA-II (mode 变量处理 $\alpha=0\Leftrightarrow n=0$ 的耦合约束),多种子拼接 Pareto 前沿
+    \item 在全体合法 $(\beta,n)$ 离散组合上穷举,L-BFGS-B 精修 $\alpha$
+    \item 均等权重理想点法选出综合最优方案 $\mathbf{X}^*$
+\end{enumerate}
+
+\lstinputlisting[
+    caption={solve\_q3.py},
+    label={lst:solve_q3},
+    firstnumber=auto,
+]{../code/src/solve_q3.py}
+
+\newpage
+\subsection{\texttt{solve\_q4.py} — 问题四:鲁棒优化}
+
+\begin{enumerate}[label=(\arabic*)]
+    \item 三类典型应用场景(高性能计算、便携低功耗、高可靠工业)与权重单纯形网格的扫描
+    \item 敏感性矩阵 $\mathbf{S}_{ij}=\partial x_i/\partial w_j$ (中心差分)
+    \item 基于 Minimax Regret 准则的鲁棒方案搜索
+    \item 跨场景稳定性评估(权重空间变异系数 CV)
+\end{enumerate}
+复用 \texttt{solve\_q3} 的 \texttt{global\_best} 函数作为加权最优求解器。
+
+\lstinputlisting[
+    caption={solve\_q4.py},
+    label={lst:solve_q4},
+    firstnumber=auto,
+]{../code/src/solve_q4.py}
+
+\newpage
+\subsection{\texttt{solve\_q5.py} — 问题五:敏感性分析与不确定性传播}
+
+结构参数层(GPR 直接支撑):
+\begin{itemize}
+    \item Sobol 全局敏感性指数(一阶 $S_i$ 与总效应 $S_{Ti}$, $N=1024$)
+    \item 局部归一化敏感性系数 $S_{ij}^{local}$ (中心差分)
+    \item LHS 蒙特卡洛不确定性传播($N=8000$, $\pm5\%$ 扰动)
+\end{itemize}
+工况参数层(机理标度近似):基于无量纲传热/流动标度关系的一阶线性化估计。
+验证闭环:对比综合最优方案 $\mathbf{X}^*$ 与鲁棒方案的变异系数和失效概率。
+
+\lstinputlisting[
+    caption={solve\_q5.py},
+    label={lst:solve_q5},
+    firstnumber=auto,
+]{../code/src/solve_q5.py}
+
+\newpage
+\subsection{\texttt{fig\_q1.py} — 问题一配图}
+
+绘制 $\beta=3.75$ 固定时不同 $n$ 取值下 $\alpha$-$R_{th}^*$ 曲线族(标注 $\alpha^*$ 拐点)
+和 $\alpha$-$\Delta P^*$ 曲线族。
+
+\lstinputlisting[
+    caption={fig\_q1.py},
+    label={lst:fig_q1},
+    firstnumber=auto,
+]{../code/src/fig_q1.py}
+
+\subsection{\texttt{fig\_q2.py} — 问题二配图}
+
+三个输出指标($R_{th}^*,\Delta P^*,\Delta T^*$)的 GPR 预测值与真实值散点对比图,
+附 $y=x$ 参考线。
+
+\lstinputlisting[
+    caption={fig\_q2.py},
+    label={lst:fig_q2},
+    firstnumber=auto,
+]{../code/src/fig_q2.py}
+
+\newpage
+\subsection{\texttt{fig\_sensitivity.py} — 问题五配图}
+
+四合一敏感性分析图板:
+(a) Sobol 总效应指数柱状图;(b) 局部归一化敏感性系数热力图(RdBu\_r 发散色);
+(c) $\pm5\%$ 扰动下变异系数对比(含工况线性叠加);
+(d) $\Delta T$ 的一阶主效应与总效应对比。
+
+\lstinputlisting[
+    caption={fig\_sensitivity.py},
+    label={lst:fig_sensitivity},
+    firstnumber=auto,
+]{../code/src/fig_sensitivity.py}
+
+\newpage
+\subsection{\texttt{fig\_pareto.py} — 问题三配图}
+
+Pareto 前沿的三目标两两投影散点图,点色按理想点距离 $D$ 着色(viridis),
+$\bigstar$ 标记综合最优 $\mathbf{F}^*$,支撑"三目标冲突、不存在单一最优"的论证。
+
+\lstinputlisting[
+    caption={fig\_pareto.py},
+    label={lst:fig_pareto},
+    firstnumber=auto,
+]{../code/src/fig_pareto.py}
+
+\newpage
+\subsection{\texttt{fig\_weight\_sweep.py} — 问题四配图}
+
+全偏好空间扫描图:权重单纯形(重心坐标投影)上 31 个采样点,
+(a) 按最优排数 $n^*$ 分区着色,标注典型场景点与等权点;
+(b) 按综合距离 $D^*(\mathbf{W})$ 连续着色,展示偏好空间内最优解的光滑变化。
+
+\lstinputlisting[
+    caption={fig\_weight\_sweep.py},
+    label={lst:fig_weight_sweep},
+    firstnumber=auto,
+]{../code/src/fig_weight_sweep.py}
+
+\newpage
+\subsection{\texttt{fig\_mc\_dist.py} — 问题五配图}
+
+$\pm 5\%$ 扰动下三项指标的蒙特卡洛响应分布直方图 + KDE,标注标称值 $y_0$、
+95\% 分位数 $y_{P95}$ 与 CV/$P_{fail}$ 数值,越界阈值 $1.10y_0$ 在分布
+尾部之外用右缘箭头示意。
+
+\lstinputlisting[
+    caption={fig\_mc\_dist.py},
+    label={lst:fig_mc_dist},
+    firstnumber=auto,
+]{../code/src/fig_mc_dist.py}
+
+\newpage
+\subsection{\texttt{fig\_regret.py} — 问题四配图}
+
+候选池 2000 个方案的最大后悔值分布直方图,标注鲁棒方案 $R_{max}$、
+容许上限 $\epsilon$ 与等权综合最优 $\mathbf{X}^*$ 的最大后悔值
+(后者在脚本内按与候选池同口径重新计算)。
+
+\lstinputlisting[
+    caption={fig\_regret.py},
+    label={lst:fig_regret},
+    firstnumber=auto,
+]{../code/src/fig_regret.py}
