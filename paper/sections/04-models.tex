@@ -645,19 +645,11 @@ $D_{\mathbf{W}}(\mathbf{X}^*(\mathbf{W}))$(可调用问题二代理模型快速�
 $n$ 从 5 增至 6)换取跨场景稳定性的显著提升,在芯片封装开模成本高昂的
 背景下具有工程价值。
 
-候选池 2000 个方案的最大后悔值分布如图~\ref{fig:regret} 所示:鲁棒方案的
+候选池 2000 个方案的最大后悔值统计表明:鲁棒方案的
 $R_{max}=0.2543$ 处于分布左缘(全体候选的最小后悔),而等权综合最优方案
 $\mathbf{X}^*$ 的最大后悔值为 $0.4539$,约为其 1.8 倍;容许上限
 $\epsilon=0.0097$ 远小于任何候选方案的后悔值,说明不存在能同时逼近所有
 场景定制最优的单一方案,按场景定制或分级设计是必要的工程手段。
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.7\textwidth]{figures/fig_regret.png}
-  \caption{候选池最大后悔值分布(虚线为鲁棒方案 $R_{max}$,点线为容许上限
-    $\epsilon$,点划线为等权综合最优 $\mathbf{X}^*$ 的最大后悔值)}
-  \label{fig:regret}
-\end{figure}
 
 \subsection{问题五:参数扰动敏感性与稳定性分析}
 

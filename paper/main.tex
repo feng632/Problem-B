@@ -24,11 +24,15 @@
 % 英文/数字 Times New Roman(模板已设),数学公式见上 newtxmath 设置。
 \setCJKmainfont{SimSun}[BoldFont={SimHei}, ItalicFont={KaiTi}]
 \setCJKfamilyfont{zhsong}[BoldFont={SimHei}, ItalicFont={KaiTi}]{SimSun}
-\setCJKfamilyfont{zhhei}{SimHei}
+% 黑体加粗:SimHei 无粗体字形,标题加粗用同属黑体字族的 FandolHei-Bold
+\setCJKfamilyfont{zhhei}[BoldFont={FandolHei-Bold}]{SimHei}
 \newcommand{\strongfont}{\songti} % 原强调字体统一为宋体,加粗处呈黑体
+% 摘要专用:宋体加粗(SimSun 无粗体字形,用同属宋体字族的 FandolSong-Bold)
+\newCJKfontfamily\songbold{FandolSong-Bold}
 
 % 标题层级(国赛官方):一级黑体小三居中、段前后12磅;二级黑体四号左对齐无缩进、
 % 段前后6磅;三级黑体小四左对齐无缩进。标题末尾禁止加标点。
+% 各级标题均黑体不加粗(SimHei 常规字形),字号不变。
 \makeatletter
 \renewcommand\section{\@startsection{section}{1}{\z@}%
     {-12pt}{12pt}%
@@ -69,9 +73,8 @@
     {\main@endoldtabular\egroup}
 \makeatother
 
-% ---------- 图表标题:五号黑体、居中 ----------
-% 官方要求全文仅黑宋两字体,图题用黑体(宋体加粗经 BoldFont 即呈黑体)。
-\DeclareCaptionFont{strongcaption}{\strongfont\bfseries}
+% ---------- 图表标题:五号黑体加粗、居中 ----------
+\DeclareCaptionFont{strongcaption}{\heiti\bfseries}
 \DeclareCaptionFont{wuhaofont}{\zihao{5}\baselineskip=13.7pt}
 \captionsetup[figure]{font={strongcaption,wuhaofont},justification=centering}
 \captionsetup[table]{font={strongcaption,wuhaofont},justification=centering}
@@ -83,11 +86,12 @@
 \def\@cite#1#2{\textsuperscript{[{#1\if@tempswa ,\ #2\fi}]}}
 \makeatother
 
-% 摘要页局部强调,模仿参考论文中问题标签与关键结论加粗的版式。
-\newcommand{\absstrong}[1]{{\strongfont\bfseries\boldmath #1}}
-\renewcommand\abstractname{{\strongfont\bfseries 摘要}}
+% 摘要页局部强调,模仿参考论文中问题标签与关键结论加粗的版式:
+% 宋体加粗,字号与摘要其余文字一致(小四)。
+\newcommand{\absstrong}[1]{{\songbold\bfseries\boldmath #1}}
+\renewcommand\abstractname{{\strongfont\bfseries 摘\hspace{1em}要}}
 \makeatletter
-\renewcommand*\mcm@cap@keywordsname{\strongfont\bfseries 关键字}
+\renewcommand*\mcm@cap@keywordsname{\songbold\bfseries 关键词}
 \makeatother
 
 % 等宽字体:DejaVu Sans Mono(TeX Live 自带,Unicode 覆盖全),
@@ -95,7 +99,7 @@
 \setmonofont{DejaVu Sans Mono}
 
 % ---------- 论文信息(比赛开始后填写) ----------
-\title{{\strongfont\bfseries 高性能芯片热管理系统优化}} % 论文题目
+\title{{\strongfont\bfseries 基于机理建模与高斯过程回归的多目标优化在歧管式微通道液冷系统中的应用研究}} % 论文题目
 \tihao{B}                            % 题号 A/B/C/D/E/F
 \baominghao{000000}                  % 报名号(从官网获取)
 \schoolname{学校名称}
@@ -146,7 +150,7 @@
     以变异系数、置信上限和越界失效概率判定稳定性。该方法识别了需要重点控制的
     加工参数,并表明所选方案在设定的小扰动范围内具有较好的工程稳定性。
 
-    \keywords{\absstrong{歧管式微通道};\absstrong{高斯过程回归};\absstrong{多目标优化};\absstrong{最小最大后悔值};\absstrong{Sobol 敏感性分析}}
+    \keywords{歧管式微通道;高斯过程回归;多目标优化;最小最大后悔值;Sobol 敏感性分析}
 \end{abstract}
 
 % 目录(电子版可不打印,如需要取消注释):
@@ -157,59 +161,49 @@
 
 \subsection{问题背景}
 
-随着高性能芯片的集成度和功率密度不断提高,散热已成为影响芯片性能、寿命
-及封装可靠性的关键因素。散热不及时会形成局部热点,引起结温升高、性能下降
-甚至器件失效,因此需要在有限空间和能耗下实现高效、均匀的散热。
-
-本文研究歧管式微通道液冷热管理系统\cite{Tuckerman1981}。系统采用去离子水冷却、氮化铝衬底,
-通过歧管分配层和针肋强化换热,改善传统微通道压降较大、温度分布不均等问题。
-芯片散热区域为 $10\times10$~mm$^2$ 的方形区域,内部布置多条平行微通道,
-并在各歧管单元对应区域内设置针肋强化结构;冷却液由顶部入口经歧管层分配
-后流入微通道换热层,最终从侧部出口流出。主要结构参数为针肋宽度比、歧管
-深高比和针肋排数,性能指标为热阻、压降及温度非均匀性。
+随着高性能芯片集成度与功率密度不断提高,散热已成为影响芯片性能、寿命及
+封装可靠性的关键因素,散热不及时会形成局部热点,引起结温升高、性能下降
+甚至器件失效。本文研究歧管式微通道液冷热管理系统\cite{Tuckerman1981}:系统采用
+去离子水冷却、氮化铝衬底,经歧管分配层与针肋强化换热,改善传统微通道
+压降较大、温度分布不均等问题;主要结构参数为针肋宽度比、歧管深高比和
+针肋排数,性能指标为热阻、压降及温度非均匀性。
 
 \subsection{问题提出}
 
 \subsubsection{问题一}
 
-首先,结合传热学和流体力学的基本原理,分析冷却液在歧管分配层和微通道换热层
-中的流动、换热及芯片导热过程。以针肋宽度比、歧管深高比和针肋排数为输入参数,
-以热阻、压降和温度非均匀性为输出指标,建立结构参数与系统性能之间的机理模型。
-在此基础上,分别讨论各结构参数对三项指标的影响方向和变化规律,分析散热能力、
-流动阻力与温度均匀性之间可能存在的制约关系,并说明选取三项指标进行综合评价
-的合理性。
+结合传热学与流体力学基本原理,分析冷却液在歧管分配层与微通道换热层中的
+流动、换热及芯片导热过程;以三项结构参数为输入、三项性能指标为输出建立
+机理模型,讨论各参数对指标的影响规律及散热能力、流动阻力与温度均匀性
+之间的制约关系,并说明以三项指标综合评价的合理性。
 
 \subsubsection{问题二}
 
-附件2给出了不同结构参数组合下系统性能指标的样本数据。利用这些数据,以三项结构
-参数作为模型输入,以热阻、压降和温度非均匀性作为模型输出,建立能够近似替代复杂
-数值计算或实验过程的代理模型,刻画结构参数与性能指标之间的非线性映射关系。
-同时,通过训练集与测试集划分、交叉验证或误差指标等方法,检验模型的拟合精度、
-泛化能力和预测稳定性,为后续优化计算提供可靠的性能评价工具。
+利用附件 2 样本数据,以三项结构参数为输入、三项性能指标为输出,建立可
+近似替代数值计算或实验过程的代理模型,刻画结构参数与性能指标间的非线性
+映射;并通过训练集与测试集划分、误差指标等方法检验其拟合精度、泛化能力
+与预测稳定性,为后续优化提供可靠的性能评价工具。
 
 \subsubsection{问题三}
 
-在问题二代理模型的基础上,将针肋宽度比、歧管深高比和针肋排数作为待确定的设计
-变量,以热阻、压降和温度非均匀性同时最小化作为优化目标,并将附件给出的参数范围
-作为可行域约束,建立多目标优化模型。由于降低热阻、减小压降和改善温度均匀性
-之间可能存在冲突,需要结合指标无量纲化、权重设置或综合评价准则,从候选解中筛选
-出兼顾各项性能的综合最优方案,并给出相应的结构参数取值。
+在问题二代理模型基础上,以三项结构参数为设计变量、三项性能指标同时最小化
+为目标、附件参数范围为可行域,建立多目标优化模型;结合指标无量纲化、权重
+设置或综合评价准则,从候选解中筛选兼顾各项性能的综合最优方案,并给出相应
+的结构参数取值。
 
 \subsubsection{问题四}
 
-不同应用场景对散热能力、泵功消耗和温度均匀性的重视程度不同,因此需要研究三项
-指标权重变化对最优设计方案的影响。通过设置具有代表性的权重组合,比较不同偏好
-下最优结构参数、目标函数值及方案排序的变化,判断优化结果对权重扰动的敏感程度。
-进一步从候选方案中选取在较大权重范围内性能波动较小、排名稳定或综合损失较低的
-鲁棒设计方案,并说明其判定标准以及优势。
+研究三项指标权重变化对最优设计方案的影响:设置代表性权重组合,比较不同
+偏好下最优结构参数、目标函数值与方案排序的变化,判断优化结果对权重扰动
+的敏感程度;进而选取在较大权重范围内性能波动小、排名稳定或综合损失低的
+鲁棒方案,并说明其判定标准与优势。
 
 \subsubsection{问题五}
 
-实际制造过程中不可避免会产生尺寸加工误差,系统运行时也可能受到流量、温度等工况
-波动的影响,使实际结构参数和工作状态偏离设计值。针对这些因素,在最优方案附近对
-关键参数进行小范围单因素或多因素扰动,观察热阻、压降和温度非均匀性的变化幅度,
-计算相应的敏感性指标,识别对系统性能影响较大的关键因素。最后,通过比较扰动前后
-的性能变化和方案稳定程度,评估设计方案的敏感性与稳定性。
+针对制造加工误差与流量、温度等工况波动,在最优方案附近对关键参数进行
+小范围单因素或多因素扰动,观察三项指标的变化幅度并计算敏感性指标,识别
+关键影响因素;比较扰动前后的性能变化与方案稳定程度,评估设计方案的
+敏感性与稳定性。
 
 \input{sections/03-model-analysis}
 \input{sections/02-assumptions}
