@@ -43,6 +43,13 @@
 \captionsetup[figure]{font={strongcaption,minusfour}}
 \captionsetup[table]{font={strongcaption,minusfour}}
 
+% ---------- 参考文献引用:正文统一右上角角标 ----------
+% 模板默认 \cite 为行内 [n] 形式,这里重定义内部 \@cite 为角标样式,
+% 多个文献仍保持 [a, b] 连写。
+\makeatletter
+\def\@cite#1#2{\textsuperscript{[{#1\if@tempswa ,\ #2\fi}]}}
+\makeatother
+
 % 摘要页局部强调,模仿参考论文中问题标签与关键结论加粗的版式。
 \newcommand{\absstrong}[1]{{\strongfont\bfseries\boldmath #1}}
 \renewcommand\abstractname{{\strongfont\bfseries 摘要}}
