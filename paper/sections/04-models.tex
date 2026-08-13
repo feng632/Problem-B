@@ -166,13 +166,13 @@ $Re \sim O(10)$,远低于转捩临界值(约 $2300$),与假设 3 的层流判定
   \end{tabular}
 \end{table}
 
-关联式标定结果如下:
+关联式标定结果如下(两式决定系数分别为 $R^2 = 0.8769$ 与 $R^2 = 0.7486$):
 \begin{align}
   \Delta P^* & = 0.2404\,\beta^{-0.9819}(1-\alpha)^{-1.2432} n^{0.1681},
-             & R^2                                                       & = 0.8769, \label{eq:dp-corr-fitted}  \\
+  \label{eq:dp-corr-fitted} \\
   R_{th}^*   & = 0.7107 + 0.5958(\alpha-0.1399)^2 + 0.0108\beta
-  + 0.0017n - 0.0176\alpha n,
-             & R^2                                                       & = 0.7486. \label{eq:rth-corr-fitted}
+  + 0.0017n - 0.0176\alpha n.
+  \label{eq:rth-corr-fitted}
 \end{align}
 热阻关联式的 MAPE 为 0.59\%,热阻最优宽度比 $\alpha^*$ 取 GPR
 交叉验证值 0.235。影响规律如图~\ref{fig:q1} 所示:
@@ -524,22 +524,14 @@ $\mathbf{e}_j - \frac{1}{3}\mathbf{1}$(分量和为零,保证扰动后仍满足
 0.22--0.23 附近(与拐点分析一致),仅排数 $n^*$ 随偏好变化:高性能计算
 取 6 以强化换热,其余两场景取 5,反映散热与泵功之间的取舍差异。
 
-全偏好单纯形 31 个采样点(28 网格点 + 3 场景点)的扫描结果如图~\ref{fig:weight-sweep}
-所示:偏重散热的区域最优排数较高($n^*=6$),偏重泵功与均匀性的区域较低
+对全偏好单纯形 31 个采样点(28 网格点 + 3 场景点)的进一步扫描表明:
+偏重散热的区域最优排数较高($n^*=6$),偏重泵功与均匀性的区域较低
 ($n^*=3\sim5$),各采样点处 $\beta^*=4.50$ 恒成立、$D^*(\mathbf{W})$
 光滑无突变,为鲁棒方案选取提供了依据。
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.95\textwidth]{figures/fig_weight_sweep.png}
-  \caption{偏好空间扫描:排数分区与综合距离((a) 最优排数分区,$\blacksquare$ 典型场景点,
-    $\blacklozenge$ 等权点;(b) 综合距离 $D^*(\mathbf{W})$ 的光滑变化)}
-  \label{fig:weight-sweep}
-\end{figure}
-
 \textbf{Step 5:权重敏感性矩阵。}在三个典型场景处分别计算敏感性矩阵
-$\mathbf{S}_{\mathbf{X},\mathbf{W}}$(中心差分,$h=0.05$),结果见表~\ref{tab:weight-sens}
-($x_2$ 与 $x_3$ 因取值离散,局部差分下梯度恒为零,表中略去):
+$\mathbf{S}_{\mathbf{X},\mathbf{W}}$,结果见表~\ref{tab:weight-sens}(中心差分,
+$h=0.05$;其中 $x_2$ 与 $x_3$ 因取值离散,局部差分下梯度恒为零,表中略去):
 
 \begin{table}[htbp]
   \centering
@@ -777,9 +769,9 @@ $\vert S_{ij}^{local} \vert$ 模长越大,说明该指标对该参数的一阶�
 \end{equation}
 式中 $\mathbf{Z}_{-i}$ 表示除 $z_i$ 外的其余变量集合。
 
-\textbf{Step 3:敏感性分析结果。}结构参数层在标称设计点
-$\mathbf{X}^*=(0.2247,4.50,5)$ 处的局部归一化敏感性系数与 Sobol 全局
-敏感性指数分别见表~\ref{tab:lsa} 与表~\ref{tab:sobol}。
+\textbf{Step 3:敏感性分析结果。}在标称设计点
+$\mathbf{X}^*=(0.2247,4.50,5)$ 处,结构参数层的局部归一化敏感性系数与
+Sobol 全局敏感性指数分别见表~\ref{tab:lsa} 与表~\ref{tab:sobol}。
 
 \begin{table}[htbp]
   \centering

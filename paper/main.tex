@@ -12,36 +12,66 @@
 \usepackage[most]{tcolorbox} % 提示框(模板示例用)
 \usepackage{url}             % 网页链接
 \usepackage{subcaption}      % 子图
+\usepackage{newtxmath} % 数学公式 Times 风格;正文西文已由模板设为 Times New Roman。
+% newtxmath 的 operators 字体跟随 \rmdefault(本环境为 Latin Modern),导致公式中
+% 数字非 Times 风格;这里改用 TeX Gyre Termes(Times 同源,TeX Live 自带)。
+% 注:newtxtext 会破坏本环境 fontspec 后续字体查找,故不加载。
+\DeclareSymbolFont{operators}{OT1}{qtm}{m}{n}
+\SetSymbolFont{operators}{bold}{OT1}{qtm}{bx}{n}
 
-% ---------- 标题与强调文字:使用具有真实粗体字形的微软雅黑 ----------
-\newCJKfontfamily\strongfont[
-    BoldFont={Microsoft YaHei Bold}
-]{Microsoft YaHei}
+% ---------- 字体规范(按竞赛格式要求) ----------
+% 正文与标题均用宋体;TeX Live 自带 FandolSong 具有真实 Bold 字形,
+% 保证"原文黑体部分"改为宋体后仍全部加粗(而非回退为黑体或丢粗)。
+% 数字与英文由主字体 Times New Roman 承担(模板已设),数学公式见 newtxmath。
+\setCJKmainfont{FandolSong-Regular}[BoldFont={FandolSong-Bold}, ItalicFont={FandolKai-Regular}]
+\setCJKfamilyfont{zhsong}[BoldFont={FandolSong-Bold}, ItalicFont={FandolKai-Regular}]{FandolSong-Regular}
+\newcommand{\strongfont}{\songti} % 原微软雅黑强调字体统一改为宋体(加粗经 BoldFont 保留)
 
 % 模板用 \@startsection 重定义了各级标题(cumcmthesis.cls:471-482),
-% 这里显式指定 Microsoft YaHei Bold,避免 SimHei 缺少粗体字形时回退为常规字重。
+% 这里按规范覆盖:一级标题四号宋体居中,二、三级标题小四号宋体左对齐,均加粗。
 \makeatletter
 \renewcommand\section{\@startsection{section}{1}{\z@}%
     {-3.5ex \@plus -1ex \@minus -.2ex}%
     {2.3ex \@plus.2ex}%
-    {\centering\strongfont\Large\bfseries\boldmath}}
+    {\centering\strongfont\zihao{4}\bfseries}}
 \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
     {-3.25ex\@plus -1ex \@minus -.2ex}%
     {1.5ex \@plus .2ex}%
-    {\strongfont\large\bfseries\boldmath}}
+    {\strongfont\zihao{-4}\bfseries}}
 \renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
     {-3.25ex\@plus -1ex \@minus -.2ex}%
     {1.5ex \@plus .2ex}%
-    {\strongfont\normalsize\bfseries\boldmath}}
+    {\strongfont\zihao{-4}\bfseries}}
 \makeatother
 
-% ---------- 图表标题:加粗 ----------
-% 模板 captionsetup 虽含 bf,但宋体无粗体字形,中文标题实际不显粗。
-% 与各级标题一致改用 Microsoft YaHei Bold,覆盖模板默认的 song 字体。
-% 注意:类型级设置优先于全局设置,必须按 figure/table 分别显式覆盖。
+% ---------- 正文:四号宋体、单倍行距、首行缩进两格 ----------
+% 覆盖模板 12.05pt 字号与 1.38 倍行距;parindent 2em 即两格汉字。
+\renewcommand*{\baselinestretch}{1.0}
+\setlength\parindent{2em}
+% 行内数学公式在四号正文下偶尔超出 2--3pt,允许断行时额外伸展消除溢出。
+\emergencystretch=1.5em
+\makeatletter
+\renewcommand\normalsize{%
+    \@setfontsize\normalsize{14}{18.2}%
+    \abovedisplayskip 12\p@ \@plus3\p@ \@minus7\p@
+    \abovedisplayshortskip \z@ \@plus3\p@
+    \belowdisplayshortskip 6.5\p@ \@plus3.5\p@ \@minus3\p@}
+\makeatother
+
+% 表格行距同步为单倍(模板在 tabular 环境中写死 arraystretch 1.38)
+\makeatletter
+\let\main@oldtabular\tabular
+\let\main@endoldtabular\endtabular
+\renewenvironment{tabular}%
+    {\bgroup\renewcommand{\arraystretch}{1.0}\main@oldtabular}%
+    {\main@endoldtabular\egroup}
+\makeatother
+
+% ---------- 图表标题:五号宋体加粗、居中 ----------
 \DeclareCaptionFont{strongcaption}{\strongfont\bfseries}
-\captionsetup[figure]{font={strongcaption,minusfour}}
-\captionsetup[table]{font={strongcaption,minusfour}}
+\DeclareCaptionFont{wuhaofont}{\zihao{5}\baselineskip=13.7pt}
+\captionsetup[figure]{font={strongcaption,wuhaofont},justification=centering}
+\captionsetup[table]{font={strongcaption,wuhaofont},justification=centering}
 
 % ---------- 参考文献引用:正文统一右上角角标 ----------
 % 模板默认 \cite 为行内 [n] 形式,这里重定义内部 \@cite 为角标样式,
