@@ -19,46 +19,48 @@
 \DeclareSymbolFont{operators}{OT1}{qtm}{m}{n}
 \SetSymbolFont{operators}{bold}{OT1}{qtm}{bx}{n}
 
-% ---------- 字体规范(按竞赛格式要求) ----------
-% 正文与标题均用宋体;TeX Live 自带 FandolSong 具有真实 Bold 字形,
-% 保证"原文黑体部分"改为宋体后仍全部加粗(而非回退为黑体或丢粗)。
-% 数字与英文由主字体 Times New Roman 承担(模板已设),数学公式见 newtxmath。
-\setCJKmainfont{FandolSong-Regular}[BoldFont={FandolSong-Bold}, ItalicFont={FandolKai-Regular}]
-\setCJKfamilyfont{zhsong}[BoldFont={FandolSong-Bold}, ItalicFont={FandolKai-Regular}]{FandolSong-Regular}
-\newcommand{\strongfont}{\songti} % 原微软雅黑强调字体统一改为宋体(加粗经 BoldFont 保留)
+% ---------- 字体规范(国赛官方:全程仅用黑、宋两种中文字体) ----------
+% 正文宋体 SimSun;标题与加粗处黑体 SimHei(宋体加粗经 BoldFont 呈黑体)。
+% 英文/数字 Times New Roman(模板已设),数学公式见上 newtxmath 设置。
+\setCJKmainfont{SimSun}[BoldFont={SimHei}, ItalicFont={KaiTi}]
+\setCJKfamilyfont{zhsong}[BoldFont={SimHei}, ItalicFont={KaiTi}]{SimSun}
+\setCJKfamilyfont{zhhei}{SimHei}
+\newcommand{\strongfont}{\songti} % 原强调字体统一为宋体,加粗处呈黑体
 
-% 模板用 \@startsection 重定义了各级标题(cumcmthesis.cls:471-482),
-% 这里按规范覆盖:一级标题四号宋体居中,二、三级标题小四号宋体左对齐,均加粗。
+% 标题层级(国赛官方):一级黑体小三居中、段前后12磅;二级黑体四号左对齐无缩进、
+% 段前后6磅;三级黑体小四左对齐无缩进。标题末尾禁止加标点。
 \makeatletter
 \renewcommand\section{\@startsection{section}{1}{\z@}%
-    {-3.5ex \@plus -1ex \@minus -.2ex}%
-    {2.3ex \@plus.2ex}%
-    {\centering\strongfont\zihao{4}\bfseries}}
+    {-12pt}{12pt}%
+    {\centering\heiti\zihao{-3}}}
 \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
-    {-3.25ex\@plus -1ex \@minus -.2ex}%
-    {1.5ex \@plus .2ex}%
-    {\strongfont\zihao{-4}\bfseries}}
+    {-6pt}{6pt}%
+    {\heiti\zihao{4}}}
 \renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
-    {-3.25ex\@plus -1ex \@minus -.2ex}%
-    {1.5ex \@plus .2ex}%
-    {\strongfont\zihao{-4}\bfseries}}
+    {-6pt}{6pt}%
+    {\heiti\zihao{-4}}}
 \makeatother
 
-% ---------- 正文:四号宋体、单倍行距、首行缩进两格 ----------
+% 标题编号:一级用中文数字(一、二、…),二三级用阿拉伯数字(1.1 / 1.1.1)。
+\renewcommand\thesection{\chinese{section}、}
+\renewcommand\thesubsection{\arabic{section}.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
+
+% ---------- 正文:小四宋体、1.5倍行距、首行缩进两格 ----------
 % 覆盖模板 12.05pt 字号与 1.38 倍行距;parindent 2em 即两格汉字。
-\renewcommand*{\baselinestretch}{1.0}
+\renewcommand*{\baselinestretch}{1.5}
 \setlength\parindent{2em}
-% 行内数学公式在四号正文下偶尔超出 2--3pt,允许断行时额外伸展消除溢出。
+% 行内数学公式偶尔超出数 pt,允许断行时额外伸展消除溢出。
 \emergencystretch=1.5em
 \makeatletter
 \renewcommand\normalsize{%
-    \@setfontsize\normalsize{14}{18.2}%
+    \@setfontsize\normalsize{12}{14.4}%
     \abovedisplayskip 12\p@ \@plus3\p@ \@minus7\p@
     \abovedisplayshortskip \z@ \@plus3\p@
     \belowdisplayshortskip 6.5\p@ \@plus3.5\p@ \@minus3\p@}
 \makeatother
 
-% 表格行距同步为单倍(模板在 tabular 环境中写死 arraystretch 1.38)
+% 表格行距保持紧凑(模板在 tabular 环境中写死 arraystretch 1.38)
 \makeatletter
 \let\main@oldtabular\tabular
 \let\main@endoldtabular\endtabular
@@ -67,7 +69,8 @@
     {\main@endoldtabular\egroup}
 \makeatother
 
-% ---------- 图表标题:五号宋体加粗、居中 ----------
+% ---------- 图表标题:五号黑体、居中 ----------
+% 官方要求全文仅黑宋两字体,图题用黑体(宋体加粗经 BoldFont 即呈黑体)。
 \DeclareCaptionFont{strongcaption}{\strongfont\bfseries}
 \DeclareCaptionFont{wuhaofont}{\zihao{5}\baselineskip=13.7pt}
 \captionsetup[figure]{font={strongcaption,wuhaofont},justification=centering}
