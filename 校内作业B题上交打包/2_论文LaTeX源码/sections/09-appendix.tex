@@ -28,21 +28,8 @@
 
 \section{项目源代码}
 
-以下为问题一至问题五建模所用的全部 Python 源程序,按模块依赖关系排列:
-公共模块 $\rightarrow$ 逐题求解 $\rightarrow$ 画图脚本。
+以下为问题一至问题五建模求解所用的全部 Python 源程序。
 
-\subsection{\texttt{common.py} — 公共配置模块}
-
-项目级路径、matplotlib 全局样式(中文字体、DPI、网格)及统一图片保存函数。
-所有求解和画图脚本均依赖此模块。
-
-\lstinputlisting[
-    caption={common.py},
-    label={lst:common},
-    firstnumber=auto,
-]{../code/src/common.py}
-
-\newpage
 \subsection{\texttt{solve\_q1.py} — 问题一:半经验关联式标定与机理分析}
 
 \begin{enumerate}[label=(\arabic*)]
@@ -124,91 +111,3 @@
     label={lst:solve_q5},
     firstnumber=auto,
 ]{../code/src/solve_q5.py}
-
-\newpage
-\subsection{\texttt{fig\_q1.py} — 问题一配图}
-
-绘制 $\beta=3.75$ 固定时不同 $n$ 取值下 $\alpha$-$R_{th}^*$ 曲线族(标注 $\alpha^*$ 拐点)
-和 $\alpha$-$\Delta P^*$ 曲线族。
-
-\lstinputlisting[
-    caption={fig\_q1.py},
-    label={lst:fig_q1},
-    firstnumber=auto,
-]{../code/src/fig_q1.py}
-
-\subsection{\texttt{fig\_q2.py} — 问题二配图}
-
-三个输出指标($R_{th}^*,\Delta P^*,\Delta T^*$)的 GPR 预测值与真实值散点对比图,
-附 $y=x$ 参考线。
-
-\lstinputlisting[
-    caption={fig\_q2.py},
-    label={lst:fig_q2},
-    firstnumber=auto,
-]{../code/src/fig_q2.py}
-
-\newpage
-\subsection{\texttt{fig\_sensitivity.py} — 问题五配图}
-
-四合一敏感性分析图板:
-(a) Sobol 总效应指数柱状图;(b) 局部归一化敏感性系数热力图(RdBu\_r 发散色);
-(c) $\pm5\%$ 扰动下变异系数对比(含工况线性叠加);
-(d) $\Delta T$ 的一阶主效应与总效应对比。
-
-\lstinputlisting[
-    caption={fig\_sensitivity.py},
-    label={lst:fig_sensitivity},
-    firstnumber=auto,
-]{../code/src/fig_sensitivity.py}
-
-\newpage
-\subsection{\texttt{fig\_pareto.py} — 问题三配图}
-
-Pareto 前沿的三目标两两投影散点图,点色按理想点距离 $D$ 着色(viridis),
-$\bigstar$ 标记综合最优 $\mathbf{F}^*$,支撑"三目标冲突、不存在单一最优"的论证。
-
-\lstinputlisting[
-    caption={fig\_pareto.py},
-    label={lst:fig_pareto},
-    firstnumber=auto,
-]{../code/src/fig_pareto.py}
-
-\newpage
-\subsection{\texttt{fig\_weight\_sweep.py} — 问题四配图}
-
-全偏好空间扫描图:权重单纯形(重心坐标投影)上 31 个采样点,
-(a) 按最优排数 $n^*$ 分区着色,标注典型场景点与等权点;
-(b) 按综合距离 $D^*(\mathbf{W})$ 连续着色,展示偏好空间内最优解的光滑变化。
-
-\lstinputlisting[
-    caption={fig\_weight\_sweep.py},
-    label={lst:fig_weight_sweep},
-    firstnumber=auto,
-]{../code/src/fig_weight_sweep.py}
-
-\newpage
-\subsection{\texttt{fig\_mc\_dist.py} — 问题五配图}
-
-$\pm 5\%$ 扰动下三项指标的蒙特卡洛响应分布直方图 + KDE,标注标称值 $y_0$、
-95\% 分位数 $y_{P95}$ 与 CV/$P_{fail}$ 数值,越界阈值 $1.10y_0$ 在分布
-尾部之外用右缘箭头示意。
-
-\lstinputlisting[
-    caption={fig\_mc\_dist.py},
-    label={lst:fig_mc_dist},
-    firstnumber=auto,
-]{../code/src/fig_mc_dist.py}
-
-\newpage
-\subsection{\texttt{fig\_regret.py} — 问题四配图}
-
-候选池 2000 个方案的最大后悔值分布直方图,标注鲁棒方案 $R_{max}$、
-容许上限 $\epsilon$ 与等权综合最优 $\mathbf{X}^*$ 的最大后悔值
-(后者在脚本内按与候选池同口径重新计算)。
-
-\lstinputlisting[
-    caption={fig\_regret.py},
-    label={lst:fig_regret},
-    firstnumber=auto,
-]{../code/src/fig_regret.py}
